@@ -1,19 +1,8 @@
 
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './lib/queryClient';
-import { DashboardPage, NotificationContainer } from './components';
-import { ReactQueryDevTools } from './components/ReactQueryDevTools';
+import { HealthApp } from './components/HealthApp'
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <div className="App">
-        <DashboardPage />
-        <NotificationContainer />
-      </div>
-      <ReactQueryDevTools />
-    </QueryClientProvider>
-  );
+  return <HealthApp />
 }
 
-export default App;
+export default App
