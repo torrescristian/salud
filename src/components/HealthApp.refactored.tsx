@@ -57,15 +57,8 @@ export function HealthApp() {
   } | null>(null);
 
   // Handle edit entry
-  const handleEditEntry = (
-    type: "medication" | "glucose" | "pressure" | "insulin",
-    data:
-      | UserMedication
-      | GlucoseMeasurement
-      | PressureMeasurement
-      | InsulinEntry
-  ) => {
-    setEditingEntry({ type, data });
+  const handleEditEntry = (type: string, data: any) => {
+    setEditingEntry({ type: type as any, data });
 
     switch (type) {
       case "medication":

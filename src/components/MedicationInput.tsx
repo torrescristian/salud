@@ -4,24 +4,35 @@ import { UserMedication } from "../types/health";
 interface MedicationInputProps {
   onMedicationSubmit: (
     medicationName: string,
-    withFood: "before" | "after" | "during" | "none"
+    withFood: "before" | "after" | "during" | "none",
+    customDate?: Date
   ) => void;
   suggestions: UserMedication[];
   placeholder?: string;
+  initialMedicationName?: string;
+  initialWithFood?: "before" | "after" | "during" | "none";
+  initialDate?: Date;
+  isEditing?: boolean;
 }
 
 export function MedicationInput({
   onMedicationSubmit,
   suggestions,
   placeholder = "Nombre del medicamento...",
+  initialMedicationName = "",
+  initialWithFood = "none",
+  initialDate,
+  isEditing = false,
 }: MedicationInputProps) {
-  const [medicationName, setMedicationName] = useState("");
+  const [medicationName, setMedicationName] = useState(initialMedicationName);
   const [withFood, setWithFood] = useState<
     "before" | "after" | "during" | "none"
-  >("none");
+  >(initialWithFood);
   const [notes, setNotes] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [customDate, setCustomDate] = useState<Date>(initialDate || new Date());
+  const [useCustomDate, setUseCustomDate] = useState(!!initialDate);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
@@ -43,12 +54,14 @@ export function MedicationInput({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (medicationName.trim()) {
-      onMedicationSubmit(medicationName.trim(), withFood);
-      setMedicationName("");
-      setWithFood("none");
-      setNotes("");
-      setShowNotes(false);
-      setShowSuggestions(false);
+      onMedicationSubmit(medicationName.trim(), withFood, useCustomDate ? customDate : undefined);
+      if (!isEditing) {
+        setMedicationName("");
+        setWithFood("none");
+        setNotes("");
+        setShowNotes(false);
+        setShowSuggestions(false);
+      }
     }
   };
 
@@ -129,6 +142,30 @@ export function MedicationInput({
           </div>
         </div>
 
+        {/* Fecha personalizada */}
+        <div>
+          <label className="flex items-center space-x-2 mb-3">
+            <input
+              type="checkbox"
+              checked={useCustomDate}
+              onChange={(e) => setUseCustomDate(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Usar fecha personalizada
+            </span>
+          </label>
+          
+          {useCustomDate && (
+            <input
+              type="datetime-local"
+              value={customDate.toISOString().slice(0, 16)}
+              onChange={(e) => setCustomDate(new Date(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          )}
+        </div>
+
         {/* Notas opcionales */}
         <div>
           <button
@@ -156,7 +193,7 @@ export function MedicationInput({
           disabled={!medicationName.trim()}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium text-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          Registrar Medicación
+          {isEditing ? "Actualizar Medicación" : "Registrar Medicación"}
         </button>
       </form>
     </div>

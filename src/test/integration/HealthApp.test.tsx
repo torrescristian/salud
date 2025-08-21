@@ -35,10 +35,12 @@ describe("HealthApp Integration Tests", () => {
       fireEvent.click(screen.getByText("Configurar Perfil"));
 
       await waitFor(() => {
-        expect(screen.getByLabelText("Nombre:")).toBeInTheDocument();
+        expect(
+          screen.getByRole("textbox", { name: /nombre/i })
+        ).toBeInTheDocument();
       });
 
-      fireEvent.change(screen.getByLabelText("Nombre:"), {
+      fireEvent.change(screen.getByRole("textbox", { name: /nombre/i }), {
         target: { value: "Juan Pérez" },
       });
 

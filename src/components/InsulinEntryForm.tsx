@@ -5,22 +5,37 @@ interface InsulinEntryFormProps {
     dose: number,
     type: "rapid" | "long" | "mixed",
     context: "fasting" | "postprandial" | "correction",
-    notes?: string
+    notes?: string,
+    customDate?: Date
   ) => void;
   readonly onCancel: () => void;
+  initialDose?: number;
+  initialType?: "rapid" | "long" | "mixed";
+  initialContext?: "fasting" | "postprandial" | "correction";
+  initialNotes?: string;
+  initialDate?: Date;
+  isEditing?: boolean;
 }
 
 export function InsulinEntryForm({
   onSubmit,
   onCancel,
+  initialDose,
+  initialType = "rapid",
+  initialContext = "fasting",
+  initialNotes = "",
+  initialDate,
+  isEditing = false,
 }: InsulinEntryFormProps) {
-  const [dose, setDose] = useState("");
-  const [type, setType] = useState<"rapid" | "long" | "mixed">("rapid");
+  const [dose, setDose] = useState(initialDose?.toString() || "");
+  const [type, setType] = useState<"rapid" | "long" | "mixed">(initialType);
   const [context, setContext] = useState<
     "fasting" | "postprandial" | "correction"
-  >("fasting");
-  const [notes, setNotes] = useState("");
-  const [showNotes, setShowNotes] = useState(false);
+  >(initialContext);
+  const [notes, setNotes] = useState(initialNotes);
+  const [showNotes, setShowNotes] = useState(!!initialNotes);
+  const [customDate, setCustomDate] = useState<Date>(initialDate || new Date());
+  const [useCustomDate, setUseCustomDate] = useState(!!initialDate);
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,7 +53,13 @@ export function InsulinEntryForm({
     }
 
     setError("");
-    onSubmit(numericDose, type, context, notes.trim() || undefined);
+    onSubmit(
+      numericDose,
+      type,
+      context,
+      notes.trim() || undefined,
+      useCustomDate ? customDate : undefined
+    );
   };
 
   const clearError = () => {
@@ -49,7 +70,7 @@ export function InsulinEntryForm({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          Registrar Insulina
+          {isEditing ? "Editar Insulina" : "Registrar Insulina"}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -190,6 +211,30 @@ export function InsulinEntryForm({
             </fieldset>
           </div>
 
+          {/* Fecha personalizada */}
+          <div>
+            <label className="flex items-center space-x-2 mb-3">
+              <input
+                type="checkbox"
+                checked={useCustomDate}
+                onChange={(e) => setUseCustomDate(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Usar fecha personalizada
+              </span>
+            </label>
+
+            {useCustomDate && (
+              <input
+                type="datetime-local"
+                value={customDate.toISOString().slice(0, 16)}
+                onChange={(e) => setCustomDate(new Date(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            )}
+          </div>
+
           {/* Notas opcionales */}
           <div>
             <button
@@ -225,7 +270,7 @@ export function InsulinEntryForm({
               disabled={!dose.trim()}
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              Registrar
+              {isEditing ? "Actualizar" : "Registrar"}
             </button>
           </div>
         </form>

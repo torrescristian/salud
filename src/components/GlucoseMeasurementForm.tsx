@@ -3,21 +3,32 @@ import { useState } from "react";
 interface GlucoseMeasurementFormProps {
   onSubmit: (
     value: number,
-    context: "fasting" | "postprandial" | "custom"
+    context: "fasting" | "postprandial" | "custom",
+    customDate?: Date
   ) => void;
   onCancel: () => void;
   criticalLimits: { min: number; max: number };
+  initialValue?: number;
+  initialContext?: "fasting" | "postprandial" | "custom";
+  initialDate?: Date;
+  isEditing?: boolean;
 }
 
 export function GlucoseMeasurementForm({
   onSubmit,
   onCancel,
   criticalLimits,
+  initialValue,
+  initialContext = "fasting",
+  initialDate,
+  isEditing = false,
 }: GlucoseMeasurementFormProps) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue?.toString() || "");
   const [context, setContext] = useState<"fasting" | "postprandial" | "custom">(
-    "fasting"
+    initialContext
   );
+  const [customDate, setCustomDate] = useState<Date>(initialDate || new Date());
+  const [useCustomDate, setUseCustomDate] = useState(!!initialDate);
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +46,7 @@ export function GlucoseMeasurementForm({
     }
 
     setError("");
-    onSubmit(numericValue, context);
+    onSubmit(numericValue, context, useCustomDate ? customDate : undefined);
   };
 
   const getStatusColor = (value: number) => {
@@ -124,6 +135,30 @@ export function GlucoseMeasurementForm({
             </div>
           )}
 
+          {/* Fecha personalizada */}
+          <div>
+            <label className="flex items-center space-x-2 mb-3">
+              <input
+                type="checkbox"
+                checked={useCustomDate}
+                onChange={(e) => setUseCustomDate(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Usar fecha personalizada
+              </span>
+            </label>
+
+            {useCustomDate && (
+              <input
+                type="datetime-local"
+                value={customDate.toISOString().slice(0, 16)}
+                onChange={(e) => setCustomDate(new Date(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            )}
+          </div>
+
           {/* Contexto */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -190,7 +225,7 @@ export function GlucoseMeasurementForm({
               disabled={!value.trim()}
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              Registrar
+              {isEditing ? "Actualizar" : "Registrar"}
             </button>
           </div>
         </form>
