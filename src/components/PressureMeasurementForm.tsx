@@ -1,16 +1,23 @@
 import { useState } from "react";
+import { Button } from "./atoms/Button";
+import { Input } from "./atoms/Input";
+import { Label } from "./atoms/Label";
 
 interface PressureMeasurementFormProps {
-  onSubmit: (systolic: number, diastolic: number, customDate?: Date) => void;
-  onCancel: () => void;
-  criticalLimits: {
+  readonly onSubmit: (
+    systolic: number,
+    diastolic: number,
+    customDate?: Date
+  ) => void;
+  readonly onCancel: () => void;
+  readonly criticalLimits: {
     systolic: { min: number; max: number };
     diastolic: { min: number; max: number };
   };
-  initialSystolic?: number;
-  initialDiastolic?: number;
-  initialDate?: Date;
-  isEditing?: boolean;
+  readonly initialSystolic?: number;
+  readonly initialDiastolic?: number;
+  readonly initialDate?: Date;
+  readonly isEditing?: boolean;
 }
 
 export function PressureMeasurementForm({
@@ -26,8 +33,30 @@ export function PressureMeasurementForm({
   const [diastolic, setDiastolic] = useState(
     initialDiastolic?.toString() || ""
   );
-  const [customDate, setCustomDate] = useState<Date>(initialDate || new Date());
-  const [useCustomDate, setUseCustomDate] = useState(!!initialDate);
+
+  // Crear fecha inicial sin conversión de zona horaria
+  const getInitialDateTime = () => {
+    if (initialDate) {
+      // Si tenemos una fecha inicial, convertirla a string local
+      const year = initialDate.getFullYear();
+      const month = String(initialDate.getMonth() + 1).padStart(2, "0");
+      const day = String(initialDate.getDate()).padStart(2, "0");
+      const hours = String(initialDate.getHours()).padStart(2, "0");
+      const minutes = String(initialDate.getMinutes()).padStart(2, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // Si no hay fecha inicial, usar la fecha y hora actual local
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [customDateTime, setCustomDateTime] = useState(getInitialDateTime());
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,12 +85,18 @@ export function PressureMeasurementForm({
       return;
     }
 
+    // Crear la fecha sin conversión de zona horaria
+    const [datePart, timePart] = customDateTime.split("T");
+    const [hours, minutes] = timePart.split(":");
+
+    const customDate = new Date();
+    customDate.setFullYear(parseInt(datePart.split("-")[0]));
+    customDate.setMonth(parseInt(datePart.split("-")[1]) - 1);
+    customDate.setDate(parseInt(datePart.split("-")[2]));
+    customDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
     setError("");
-    onSubmit(
-      systolicValue,
-      diastolicValue,
-      useCustomDate ? customDate : undefined
-    );
+    onSubmit(systolicValue, diastolicValue, customDate);
   };
 
   const getStatusColor = (systolic: number, diastolic: number) => {
@@ -148,131 +183,114 @@ export function PressureMeasurementForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          {isEditing ? "Editar Presión Arterial" : "Registrar Presión Arterial"}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Presión Sistólica (Alta) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Presión Alta (mmHg):
-            </label>
-            <input
-              type="number"
-              value={systolic}
-              onChange={(e) => {
-                setSystolic(e.target.value);
-                clearError();
-              }}
-              placeholder="120"
-              className="w-full px-4 py-3 text-xl text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              max="300"
-              step="1"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Presión cuando el corazón late (número superior)
-            </p>
-          </div>
-
-          {/* Presión Diastólica (Baja) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Presión Baja (mmHg):
-            </label>
-            <input
-              type="number"
-              value={diastolic}
-              onChange={(e) => {
-                setDiastolic(e.target.value);
-                clearError();
-              }}
-              placeholder="80"
-              className="w-full px-4 py-3 text-xl text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              max="200"
-              step="1"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Presión cuando el corazón descansa (número inferior)
-            </p>
-          </div>
-
-          {/* Fecha personalizada */}
-          <div>
-            <label className="flex items-center space-x-2 mb-3">
-              <input
-                type="checkbox"
-                checked={useCustomDate}
-                onChange={(e) => setUseCustomDate(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Usar fecha personalizada
-              </span>
-            </label>
-            
-            {useCustomDate && (
-              <input
-                type="datetime-local"
-                value={customDate.toISOString().slice(0, 16)}
-                onChange={(e) => setCustomDate(new Date(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            )}
-          </div>
-
-          {/* Estado visual */}
-          {systolic && diastolic && !error && (
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div
-                className={`text-3xl font-bold ${getStatusColor(
-                  parseFloat(systolic),
-                  parseFloat(diastolic)
-                )}`}
-              >
-                {getStatusEmoji(parseFloat(systolic), parseFloat(diastolic))}{" "}
-                {getStatusText(parseFloat(systolic), parseFloat(diastolic))}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                Límites: {criticalLimits.systolic.min}/
-                {criticalLimits.diastolic.min} - {criticalLimits.systolic.max}/
-                {criticalLimits.diastolic.max} mmHg
-              </div>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Botones */}
-          <div className="flex space-x-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={!systolic.trim() || !diastolic.trim()}
-              className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {isEditing ? "Actualizar" : "Registrar"}
-            </button>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Presión Sistólica (Alta) */}
+      <div className="space-y-2">
+        <Label htmlFor="systolic-value" required>
+          Presión Alta (mmHg)
+        </Label>
+        <Input
+          id="systolic-value"
+          type="number"
+          value={systolic}
+          onChange={(e) => {
+            setSystolic(e.target.value);
+            clearError();
+          }}
+          placeholder="120"
+          className="w-full px-4 py-3 text-xl text-center"
+          min="0"
+          max="300"
+          step="1"
+          required
+        />
+        <p className="text-xs text-gray-500">
+          Presión cuando el corazón late (número superior)
+        </p>
       </div>
-    </div>
+
+      {/* Presión Diastólica (Baja) */}
+      <div className="space-y-2">
+        <Label htmlFor="diastolic-value" required>
+          Presión Baja (mmHg)
+        </Label>
+        <Input
+          id="diastolic-value"
+          type="number"
+          value={diastolic}
+          onChange={(e) => {
+            setDiastolic(e.target.value);
+            clearError();
+          }}
+          placeholder="80"
+          className="w-full px-4 py-3 text-xl text-center"
+          min="0"
+          max="200"
+          step="1"
+          required
+        />
+        <p className="text-xs text-gray-500">
+          Presión cuando el corazón descansa (número inferior)
+        </p>
+      </div>
+
+      {/* Estado visual */}
+      {systolic && diastolic && !error && (
+        <div className="text-center p-4 bg-gray-50 rounded-lg">
+          <div
+            className={`text-3xl font-bold ${getStatusColor(
+              parseFloat(systolic),
+              parseFloat(diastolic)
+            )}`}
+          >
+            {getStatusEmoji(parseFloat(systolic), parseFloat(diastolic))}{" "}
+            {getStatusText(parseFloat(systolic), parseFloat(diastolic))}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">
+            Límites: {criticalLimits.systolic.min}/
+            {criticalLimits.diastolic.min} - {criticalLimits.systolic.max}/
+            {criticalLimits.diastolic.max} mmHg
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
+      {/* Fecha y hora */}
+      <div className="space-y-2">
+        <Label htmlFor="pressure-date">Fecha y hora:</Label>
+        <Input
+          id="pressure-date"
+          type="datetime-local"
+          value={customDateTime}
+          onChange={(e) => setCustomDateTime(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      {/* Botones de acción */}
+      <div className="flex space-x-3 pt-4">
+        <Button
+          type="button"
+          onClick={onCancel}
+          variant="secondary"
+          className="flex-1"
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          disabled={!systolic.trim() || !diastolic.trim()}
+          className="flex-1"
+        >
+          {isEditing ? "Actualizar" : "Registrar"} Presión
+        </Button>
+      </div>
+    </form>
   );
 }

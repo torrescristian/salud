@@ -21,10 +21,10 @@ export function ActionButton({
       variant={variant}
       size="lg"
       disabled={disabled}
-      className="flex flex-col items-center space-y-1 h-20"
+      className="flex flex-col items-center justify-center space-y-3 h-24 bg-gradient-to-br hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl border-0"
     >
-      <span className="text-2xl">{icon}</span>
-      <span className="text-sm">{label}</span>
+      <div className="text-3xl filter drop-shadow-sm">{icon}</div>
+      <span className="text-sm font-semibold tracking-wide">{label}</span>
     </Button>
   );
 }

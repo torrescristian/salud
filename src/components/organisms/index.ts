@@ -3,3 +3,4 @@ export { AppHeader } from "./AppHeader";
 export { DailySummary } from "./DailySummary";
 export { ProfileForm } from "./ProfileForm";
 export { SetupCard } from "./SetupCard";
+export { StackPage } from "./StackPage";

@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 
 export interface InputProps {
-  type?: "text" | "number" | "email" | "password" | "datetime-local";
+  type?: "text" | "number" | "email" | "password" | "datetime-local" | "date";
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;

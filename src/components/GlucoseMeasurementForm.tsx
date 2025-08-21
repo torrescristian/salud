@@ -1,18 +1,45 @@
 import { useState } from "react";
+import { Button } from "./atoms/Button";
+import { Input } from "./atoms/Input";
+import { Label } from "./atoms/Label";
+import { RadioGroup } from "./molecules/RadioGroup";
+
+type GlucoseContext = "fasting" | "postprandial" | "custom";
 
 interface GlucoseMeasurementFormProps {
-  onSubmit: (
+  readonly onSubmit: (
     value: number,
-    context: "fasting" | "postprandial" | "custom",
+    context: GlucoseContext,
     customDate?: Date
   ) => void;
-  onCancel: () => void;
-  criticalLimits: { min: number; max: number };
-  initialValue?: number;
-  initialContext?: "fasting" | "postprandial" | "custom";
-  initialDate?: Date;
-  isEditing?: boolean;
+  readonly onCancel: () => void;
+  readonly criticalLimits: { min: number; max: number };
+  readonly initialValue?: number;
+  readonly initialContext?: GlucoseContext;
+  readonly initialDate?: Date;
+  readonly isEditing?: boolean;
 }
+
+const contextOptions = [
+  {
+    value: "fasting",
+    label: "En ayunas",
+    description: "Antes del desayuno, sin comer por 8+ horas",
+    icon: "🌅",
+  },
+  {
+    value: "postprandial",
+    label: "Después de comer",
+    description: "2 horas después de una comida",
+    icon: "🍽️",
+  },
+  {
+    value: "custom",
+    label: "Otro momento",
+    description: "Otro momento del día",
+    icon: "⏰",
+  },
+];
 
 export function GlucoseMeasurementForm({
   onSubmit,
@@ -24,11 +51,31 @@ export function GlucoseMeasurementForm({
   isEditing = false,
 }: GlucoseMeasurementFormProps) {
   const [value, setValue] = useState(initialValue?.toString() || "");
-  const [context, setContext] = useState<"fasting" | "postprandial" | "custom">(
-    initialContext
-  );
-  const [customDate, setCustomDate] = useState<Date>(initialDate || new Date());
-  const [useCustomDate, setUseCustomDate] = useState(!!initialDate);
+  const [context, setContext] = useState<GlucoseContext>(initialContext);
+
+  // Crear fecha inicial sin conversión de zona horaria
+  const getInitialDateTime = () => {
+    if (initialDate) {
+      // Si tenemos una fecha inicial, convertirla a string local
+      const year = initialDate.getFullYear();
+      const month = String(initialDate.getMonth() + 1).padStart(2, "0");
+      const day = String(initialDate.getDate()).padStart(2, "0");
+      const hours = String(initialDate.getHours()).padStart(2, "0");
+      const minutes = String(initialDate.getMinutes()).padStart(2, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // Si no hay fecha inicial, usar la fecha y hora actual local
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [customDateTime, setCustomDateTime] = useState(getInitialDateTime());
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,8 +92,18 @@ export function GlucoseMeasurementForm({
       return;
     }
 
+    // Crear la fecha sin conversión de zona horaria
+    const [datePart, timePart] = customDateTime.split("T");
+    const [hours, minutes] = timePart.split(":");
+
+    const customDate = new Date();
+    customDate.setFullYear(parseInt(datePart.split("-")[0]));
+    customDate.setMonth(parseInt(datePart.split("-")[1]) - 1);
+    customDate.setDate(parseInt(datePart.split("-")[2]));
+    customDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
     setError("");
-    onSubmit(numericValue, context, useCustomDate ? customDate : undefined);
+    onSubmit(numericValue, context, customDate);
   };
 
   const getStatusColor = (value: number) => {
@@ -89,147 +146,85 @@ export function GlucoseMeasurementForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          Registrar Glucemia
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Campo de valor */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Valor (mg/dL):
-            </label>
-            <input
-              type="number"
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                setError("");
-              }}
-              placeholder="120"
-              className="w-full px-4 py-3 text-xl text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-              max="1000"
-              step="0.1"
-              required
-            />
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-          </div>
-
-          {/* Estado visual */}
-          {value && !error && (
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div
-                className={`text-3xl font-bold ${getStatusColor(
-                  parseFloat(value)
-                )}`}
-              >
-                {getStatusEmoji(parseFloat(value))}{" "}
-                {getStatusText(parseFloat(value))}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                Límites: {criticalLimits.min} - {criticalLimits.max} mg/dL
-              </div>
-            </div>
-          )}
-
-          {/* Fecha personalizada */}
-          <div>
-            <label className="flex items-center space-x-2 mb-3">
-              <input
-                type="checkbox"
-                checked={useCustomDate}
-                onChange={(e) => setUseCustomDate(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Usar fecha personalizada
-              </span>
-            </label>
-
-            {useCustomDate && (
-              <input
-                type="datetime-local"
-                value={customDate.toISOString().slice(0, 16)}
-                onChange={(e) => setCustomDate(new Date(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            )}
-          </div>
-
-          {/* Contexto */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Contexto:
-            </label>
-            <div className="space-y-2">
-              {[
-                {
-                  value: "fasting" as const,
-                  label: "En ayunas",
-                  description: "Antes del desayuno, sin comer por 8+ horas",
-                },
-                {
-                  value: "postprandial" as const,
-                  label: "Después de comer",
-                  description: "2 horas después de una comida",
-                },
-                {
-                  value: "custom" as const,
-                  label: "Otro momento",
-                  description: "Otro momento del día",
-                },
-              ].map((option) => (
-                <label
-                  key={option.value}
-                  className="flex items-start space-x-3 cursor-pointer"
-                >
-                  <input
-                    type="radio"
-                    name="context"
-                    value={option.value}
-                    checked={context === option.value}
-                    onChange={(e) =>
-                      setContext(
-                        e.target.value as "fasting" | "postprandial" | "custom"
-                      )
-                    }
-                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div>
-                    <div className="font-medium text-gray-900">
-                      {option.label}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {option.description}
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Botones */}
-          <div className="flex space-x-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={!value.trim()}
-              className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {isEditing ? "Actualizar" : "Registrar"}
-            </button>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Campo de valor */}
+      <div className="space-y-2">
+        <Label htmlFor="glucose-value" required>
+          Valor (mg/dL)
+        </Label>
+        <Input
+          id="glucose-value"
+          type="number"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError("");
+          }}
+          placeholder="120"
+          className="w-full px-4 py-3 text-xl text-center"
+          min="0"
+          max="1000"
+          step="0.1"
+          required
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-    </div>
+
+      {/* Estado visual */}
+      {value && !error && (
+        <div className="text-center p-4 bg-gray-50 rounded-lg">
+          <div
+            className={`text-3xl font-bold ${getStatusColor(
+              parseFloat(value)
+            )}`}
+          >
+            {getStatusEmoji(parseFloat(value))}{" "}
+            {getStatusText(parseFloat(value))}
+          </div>
+          <div className="text-sm text-gray-600 mt-1">
+            Límites: {criticalLimits.min} - {criticalLimits.max} mg/dL
+          </div>
+        </div>
+      )}
+
+      {/* Contexto */}
+      <div className="space-y-3">
+        <Label>Contexto:</Label>
+        <RadioGroup
+          name="glucose-context"
+          value={context}
+          onChange={(value) => setContext(value as GlucoseContext)}
+          options={contextOptions}
+          layout="vertical"
+        />
+      </div>
+
+      {/* Fecha y hora */}
+      <div className="space-y-2">
+        <Label htmlFor="glucose-date">Fecha y hora:</Label>
+        <Input
+          id="glucose-date"
+          type="datetime-local"
+          value={customDateTime}
+          onChange={(e) => setCustomDateTime(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      {/* Botones de acción */}
+      <div className="flex space-x-3 pt-4">
+        <Button
+          type="button"
+          onClick={onCancel}
+          variant="secondary"
+          className="flex-1"
+        >
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={!value.trim()} className="flex-1">
+          {isEditing ? "Actualizar" : "Registrar"} Glucemia
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -1,21 +1,70 @@
 import { useState } from "react";
+import { Button } from "./atoms/Button";
+import { Input } from "./atoms/Input";
+import { Label } from "./atoms/Label";
+import { RadioGroup } from "./molecules/RadioGroup";
+
+type InsulinType = "rapid" | "long" | "mixed";
+type InsulinContext = "fasting" | "postprandial" | "correction";
 
 interface InsulinEntryFormProps {
   readonly onSubmit: (
     dose: number,
-    type: "rapid" | "long" | "mixed",
-    context: "fasting" | "postprandial" | "correction",
+    type: InsulinType,
+    context: InsulinContext,
     notes?: string,
     customDate?: Date
   ) => void;
   readonly onCancel: () => void;
-  initialDose?: number;
-  initialType?: "rapid" | "long" | "mixed";
-  initialContext?: "fasting" | "postprandial" | "correction";
-  initialNotes?: string;
-  initialDate?: Date;
-  isEditing?: boolean;
+  readonly initialDose?: number;
+  readonly initialType?: InsulinType;
+  readonly initialContext?: InsulinContext;
+  readonly initialNotes?: string;
+  readonly initialDate?: Date;
+  readonly isEditing?: boolean;
 }
+
+const insulinTypeOptions = [
+  {
+    value: "rapid",
+    label: "Rápida",
+    description: "Actúa en 15-30 minutos",
+    icon: "⚡",
+  },
+  {
+    value: "long",
+    label: "Lenta",
+    description: "Actúa en 1-2 horas, dura 12-24h",
+    icon: "🐌",
+  },
+  {
+    value: "mixed",
+    label: "Mixta",
+    description: "Combinación de rápida y lenta",
+    icon: "🔄",
+  },
+];
+
+const contextOptions = [
+  {
+    value: "fasting",
+    label: "En ayunas",
+    description: "Antes del desayuno",
+    icon: "🌅",
+  },
+  {
+    value: "postprandial",
+    label: "Después de comer",
+    description: "Para controlar glucemia postprandial",
+    icon: "🍽️",
+  },
+  {
+    value: "correction",
+    label: "Corrección",
+    description: "Para bajar glucemia alta",
+    icon: "🎯",
+  },
+];
 
 export function InsulinEntryForm({
   onSubmit,
@@ -28,14 +77,34 @@ export function InsulinEntryForm({
   isEditing = false,
 }: InsulinEntryFormProps) {
   const [dose, setDose] = useState(initialDose?.toString() || "");
-  const [type, setType] = useState<"rapid" | "long" | "mixed">(initialType);
-  const [context, setContext] = useState<
-    "fasting" | "postprandial" | "correction"
-  >(initialContext);
+  const [type, setType] = useState<InsulinType>(initialType);
+  const [context, setContext] = useState<InsulinContext>(initialContext);
   const [notes, setNotes] = useState(initialNotes);
   const [showNotes, setShowNotes] = useState(!!initialNotes);
-  const [customDate, setCustomDate] = useState<Date>(initialDate || new Date());
-  const [useCustomDate, setUseCustomDate] = useState(!!initialDate);
+
+  // Crear fecha inicial sin conversión de zona horaria
+  const getInitialDateTime = () => {
+    if (initialDate) {
+      // Si tenemos una fecha inicial, convertirla a string local
+      const year = initialDate.getFullYear();
+      const month = String(initialDate.getMonth() + 1).padStart(2, "0");
+      const day = String(initialDate.getDate()).padStart(2, "0");
+      const hours = String(initialDate.getHours()).padStart(2, "0");
+      const minutes = String(initialDate.getMinutes()).padStart(2, "0");
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // Si no hay fecha inicial, usar la fecha y hora actual local
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [customDateTime, setCustomDateTime] = useState(getInitialDateTime());
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,14 +121,18 @@ export function InsulinEntryForm({
       return;
     }
 
+    // Crear la fecha sin conversión de zona horaria
+    const [datePart, timePart] = customDateTime.split("T");
+    const [hours, minutes] = timePart.split(":");
+
+    const customDate = new Date();
+    customDate.setFullYear(parseInt(datePart.split("-")[0]));
+    customDate.setMonth(parseInt(datePart.split("-")[1]) - 1);
+    customDate.setDate(parseInt(datePart.split("-")[2]));
+    customDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
     setError("");
-    onSubmit(
-      numericDose,
-      type,
-      context,
-      notes.trim() || undefined,
-      useCustomDate ? customDate : undefined
-    );
+    onSubmit(numericDose, type, context, notes.trim() || undefined, customDate);
   };
 
   const clearError = () => {
@@ -67,214 +140,101 @@ export function InsulinEntryForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          {isEditing ? "Editar Insulina" : "Registrar Insulina"}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Dosis */}
-          <div>
-            <label
-              htmlFor="insulin-dose"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Dosis (unidades):
-            </label>
-            <input
-              id="insulin-dose"
-              type="number"
-              value={dose}
-              onChange={(e) => {
-                setDose(e.target.value);
-                clearError();
-              }}
-              placeholder="10"
-              className="w-full px-4 py-3 text-xl text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0.1"
-              max="100"
-              step="0.1"
-              required
-            />
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-          </div>
-
-          {/* Tipo de insulina */}
-          <div>
-            <fieldset>
-              <legend className="block text-sm font-medium text-gray-700 mb-3">
-                Tipo de insulina:
-              </legend>
-              <div className="space-y-2">
-                {[
-                  {
-                    value: "rapid" as const,
-                    label: "Rápida",
-                    description: "Actúa en 15-30 minutos",
-                  },
-                  {
-                    value: "long" as const,
-                    label: "Lenta",
-                    description: "Actúa en 1-2 horas, dura 12-24h",
-                  },
-                  {
-                    value: "mixed" as const,
-                    label: "Mixta",
-                    description: "Combinación de rápida y lenta",
-                  },
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-start space-x-3 cursor-pointer"
-                    aria-label={`Tipo de insulina: ${option.label}`}
-                  >
-                    <input
-                      type="radio"
-                      name="type"
-                      value={option.value}
-                      checked={type === option.value}
-                      onChange={(e) =>
-                        setType(e.target.value as "rapid" | "long" | "mixed")
-                      }
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {option.label}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {option.description}
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-
-          {/* Contexto */}
-          <div>
-            <fieldset>
-              <legend className="block text-sm font-medium text-gray-700 mb-3">
-                Contexto:
-              </legend>
-              <div className="space-y-2">
-                {[
-                  {
-                    value: "fasting" as const,
-                    label: "En ayunas",
-                    description: "Antes del desayuno",
-                  },
-                  {
-                    value: "postprandial" as const,
-                    label: "Después de comer",
-                    description: "Para controlar glucemia postprandial",
-                  },
-                  {
-                    value: "correction" as const,
-                    label: "Corrección",
-                    description: "Para bajar glucemia alta",
-                  },
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-start space-x-3 cursor-pointer"
-                    aria-label={`Contexto: ${option.label}`}
-                  >
-                    <input
-                      type="radio"
-                      name="context"
-                      value={option.value}
-                      checked={context === option.value}
-                      onChange={(e) =>
-                        setContext(
-                          e.target.value as
-                            | "fasting"
-                            | "postprandial"
-                            | "correction"
-                        )
-                      }
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {option.label}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {option.description}
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-
-          {/* Fecha personalizada */}
-          <div>
-            <label className="flex items-center space-x-2 mb-3">
-              <input
-                type="checkbox"
-                checked={useCustomDate}
-                onChange={(e) => setUseCustomDate(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Usar fecha personalizada
-              </span>
-            </label>
-
-            {useCustomDate && (
-              <input
-                type="datetime-local"
-                value={customDate.toISOString().slice(0, 16)}
-                onChange={(e) => setCustomDate(new Date(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            )}
-          </div>
-
-          {/* Notas opcionales */}
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowNotes(!showNotes)}
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              {showNotes ? "Ocultar notas" : "+ Agregar notas"}
-            </button>
-
-            {showNotes && (
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas adicionales..."
-                rows={3}
-                className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            )}
-          </div>
-
-          {/* Botones */}
-          <div className="flex space-x-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={!dose.trim()}
-              className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {isEditing ? "Actualizar" : "Registrar"}
-            </button>
-          </div>
-        </form>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Dosis */}
+      <div className="space-y-2">
+        <Label htmlFor="insulin-dose" required>
+          Dosis (unidades)
+        </Label>
+        <Input
+          id="insulin-dose"
+          type="number"
+          value={dose}
+          onChange={(e) => {
+            setDose(e.target.value);
+            clearError();
+          }}
+          placeholder="10"
+          className="w-full px-4 py-3 text-xl text-center"
+          min="0.1"
+          max="100"
+          step="0.1"
+          required
+        />
+        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-    </div>
+
+      {/* Tipo de insulina */}
+      <div className="space-y-3">
+        <Label>Tipo de insulina:</Label>
+        <RadioGroup
+          name="insulin-type"
+          value={type}
+          onChange={(value) => setType(value as InsulinType)}
+          options={insulinTypeOptions}
+          layout="vertical"
+        />
+      </div>
+
+      {/* Contexto */}
+      <div className="space-y-3">
+        <Label>Contexto:</Label>
+        <RadioGroup
+          name="insulin-context"
+          value={context}
+          onChange={(value) => setContext(value as InsulinContext)}
+          options={contextOptions}
+          layout="vertical"
+        />
+      </div>
+
+      {/* Fecha y hora */}
+      <div className="space-y-2">
+        <Label htmlFor="insulin-date">Fecha y hora:</Label>
+        <Input
+          id="insulin-date"
+          type="datetime-local"
+          value={customDateTime}
+          onChange={(e) => setCustomDateTime(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+      {/* Notas opcionales */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => setShowNotes(!showNotes)}
+          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+        >
+          {showNotes ? "Ocultar notas" : "+ Agregar notas"}
+        </button>
+
+        {showNotes && (
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notas adicionales..."
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          />
+        )}
+      </div>
+
+      {/* Botones de acción */}
+      <div className="flex space-x-3 pt-4">
+        <Button
+          type="button"
+          onClick={onCancel}
+          variant="secondary"
+          className="flex-1"
+        >
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={!dose.trim()} className="flex-1">
+          {isEditing ? "Actualizar" : "Registrar"} Insulina
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -90,9 +90,15 @@ describe("HealthApp Integration Tests", () => {
       render(<HealthApp />);
       expect(screen.getByText("Control Médico")).toBeInTheDocument();
       expect(screen.getByText("Medicación")).toBeInTheDocument();
-      expect(screen.getByText("Glucemia")).toBeInTheDocument();
-      expect(screen.getByText("Presión")).toBeInTheDocument();
-      expect(screen.getByText("Insulina")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "📊 Glucemia" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "❤️ Presión" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "💉 Insulina" })
+      ).toBeInTheDocument();
     });
 
     it("debe abrir modal de medicación", async () => {
@@ -110,21 +116,23 @@ describe("HealthApp Integration Tests", () => {
     it("debe abrir modal de glucemia", async () => {
       render(<HealthApp />);
 
-      fireEvent.click(screen.getByText("Glucemia"));
+      fireEvent.click(screen.getByRole("button", { name: "📊 Glucemia" }));
 
       await waitFor(() => {
-        expect(screen.getByText("Registrar Glucemia")).toBeInTheDocument();
+        expect(
+          screen.getByRole("heading", { name: "Registrar Glucemia" })
+        ).toBeInTheDocument();
       });
     });
 
     it("debe abrir modal de presión", async () => {
       render(<HealthApp />);
 
-      fireEvent.click(screen.getByText("Presión"));
+      fireEvent.click(screen.getByRole("button", { name: "❤️ Presión" }));
 
       await waitFor(() => {
         expect(
-          screen.getByText("Registrar Presión Arterial")
+          screen.getByRole("heading", { name: "Registrar Presión Arterial" })
         ).toBeInTheDocument();
       });
     });
@@ -132,10 +140,12 @@ describe("HealthApp Integration Tests", () => {
     it("debe abrir modal de insulina", async () => {
       render(<HealthApp />);
 
-      fireEvent.click(screen.getByText("Insulina"));
+      fireEvent.click(screen.getByRole("button", { name: "💉 Insulina" }));
 
       await waitFor(() => {
-        expect(screen.getByText("Registrar Insulina")).toBeInTheDocument();
+        expect(
+          screen.getByRole("heading", { name: "Registrar Insulina" })
+        ).toBeInTheDocument();
       });
     });
   });
