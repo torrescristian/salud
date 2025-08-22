@@ -1,4 +1,6 @@
+import { useState, useCallback } from "react";
 import { ParallelHealthCharts } from "../molecules/ParallelHealthCharts";
+import { CompactFilters, FilterPeriod } from "../molecules/CompactFilters";
 import {
   GlucoseMeasurement,
   PressureMeasurement,
@@ -18,22 +20,112 @@ export function AnalyticsView({
   insulinEntries,
   className = "",
 }: AnalyticsViewProps) {
+  const [filteredGlucose, setFilteredGlucose] = useState(glucoseMeasurements);
+  const [filteredPressure, setFilteredPressure] =
+    useState(pressureMeasurements);
+  const [filteredInsulin, setFilteredInsulin] = useState(insulinEntries);
+
+  const handlePeriodChange = useCallback(
+    (_period: FilterPeriod, startDate: Date, endDate: Date) => {
+      // Filtrar glucemia
+      const filteredGlucoseData = glucoseMeasurements.filter((measurement) => {
+        const measurementDate = new Date(measurement.timestamp);
+        const measurementDateOnly = new Date(
+          measurementDate.getFullYear(),
+          measurementDate.getMonth(),
+          measurementDate.getDate()
+        );
+        const startDateOnly = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate()
+        );
+        const endDateOnly = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate()
+        );
+
+        return (
+          measurementDateOnly >= startDateOnly &&
+          measurementDateOnly <= endDateOnly
+        );
+      });
+
+      // Filtrar presión
+      const filteredPressureData = pressureMeasurements.filter(
+        (measurement) => {
+          const measurementDate = new Date(measurement.timestamp);
+          const measurementDateOnly = new Date(
+            measurementDate.getFullYear(),
+            measurementDate.getMonth(),
+            measurementDate.getDate()
+          );
+          const startDateOnly = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate()
+          );
+          const endDateOnly = new Date(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate()
+          );
+
+          return (
+            measurementDateOnly >= startDateOnly &&
+            measurementDateOnly <= endDateOnly
+          );
+        }
+      );
+
+      // Filtrar insulina
+      const filteredInsulinData = insulinEntries.filter((entry) => {
+        const entryDate = new Date(entry.timestamp);
+        const entryDateOnly = new Date(
+          entryDate.getFullYear(),
+          entryDate.getMonth(),
+          entryDate.getDate()
+        );
+        const startDateOnly = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate()
+        );
+        const endDateOnly = new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate()
+        );
+
+        return entryDateOnly >= startDateOnly && entryDateOnly <= endDateOnly;
+      });
+
+      setFilteredGlucose(filteredGlucoseData);
+      setFilteredPressure(filteredPressureData);
+      setFilteredInsulin(filteredInsulinData);
+    },
+    [glucoseMeasurements, pressureMeasurements, insulinEntries]
+  );
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Filtros Compactos */}
+      <CompactFilters onPeriodChange={handlePeriodChange} />
+
       {/* Gráficos Paralelos de Salud */}
       <ParallelHealthCharts
-        glucoseMeasurements={glucoseMeasurements}
-        pressureMeasurements={pressureMeasurements}
+        glucoseMeasurements={filteredGlucose}
+        pressureMeasurements={filteredPressure}
       />
 
       {/* Resumen de Insulina */}
-      {insulinEntries.length > 0 && (
+      {filteredInsulin.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             💉 Aplicaciones de Insulina
           </h3>
           <div className="space-y-3">
-            {insulinEntries
+            {filteredInsulin
               .slice(-5)
               .reverse()
               .map((entry) => (

@@ -10,6 +10,7 @@ import {
   Legend,
   Filler,
 } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -22,7 +23,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ChartDataLabels
 );
 
 interface MeasurementPoint {
@@ -30,54 +32,65 @@ interface MeasurementPoint {
   value: number;
 }
 
-interface HealthChartProps {
-  title: string;
+interface Dataset {
+  label: string;
   data: MeasurementPoint[];
-  unit: string;
   color: string;
   backgroundColor: string;
   borderColor: string;
+}
+
+interface HealthChartProps {
+  datasets: Dataset[];
+  unit: string;
   minValue?: number;
   maxValue?: number;
   className?: string;
 }
 
 export const HealthChart = ({
-  title,
-  data,
+  datasets,
   unit,
-  color,
-  backgroundColor,
-  borderColor,
   minValue,
   maxValue,
   className = "",
 }: HealthChartProps) => {
-  // Ordenar datos por timestamp
-  const sortedData = [...data].sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  // Ordenar todos los datasets por timestamp
+  const allTimestamps = datasets.flatMap((dataset) =>
+    dataset.data.map((point) => point.timestamp)
+  );
+  const uniqueTimestamps = [...new Set(allTimestamps)].sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
   );
 
   const chartData = {
-    labels: sortedData.map((point) => {
-      const date = parseISO(point.timestamp);
+    labels: uniqueTimestamps.map((timestamp) => {
+      const date = parseISO(timestamp);
       return format(date, "dd/MM", { locale: es });
     }),
-    datasets: [
-      {
-        label: title,
-        data: sortedData.map((point) => point.value),
-        borderColor: borderColor,
-        backgroundColor: backgroundColor,
+    datasets: datasets.map((dataset) => {
+      const sortedData = [...dataset.data].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      return {
+        label: dataset.label,
+        data: uniqueTimestamps.map((timestamp) => {
+          const point = sortedData.find((p) => p.timestamp === timestamp);
+          return point ? point.value : null;
+        }),
+        borderColor: dataset.borderColor,
+        backgroundColor: dataset.backgroundColor,
         borderWidth: 3,
-        pointBackgroundColor: color,
-        pointBorderColor: color,
+        pointBackgroundColor: dataset.color,
+        pointBorderColor: dataset.color,
         pointRadius: 6,
         pointHoverRadius: 8,
-        fill: true,
+        fill: false,
         tension: 0.4,
-      },
-    ],
+      };
+    }),
   };
 
   const options = {
@@ -88,37 +101,49 @@ export const HealthChart = ({
         display: false,
       },
       title: {
-        display: true,
-        text: title,
-        color: color,
-        font: {
-          size: 18,
-          weight: "bold" as const,
-        },
-        padding: {
-          top: 10,
-          bottom: 20,
-        },
+        display: false,
       },
       tooltip: {
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        enabled: true,
+        mode: "index" as const,
+        intersect: false,
+        backgroundColor: "rgba(0, 0, 0, 0.9)",
         titleColor: "white",
         bodyColor: "white",
-        borderColor: color,
-        borderWidth: 1,
+        borderColor: datasets[0]?.color || "#6B7280",
+        borderWidth: 2,
+        cornerRadius: 8,
+        displayColors: true,
         callbacks: {
-          label: (context: { parsed: { y: number } }) => {
-            return `${context.parsed.y} ${unit}`;
+          label: (context: {
+            dataset: { label?: string };
+            parsed: { y: number };
+          }) => {
+            return `${context.dataset.label || "Valor"}: ${
+              context.parsed.y
+            } ${unit}`;
           },
           title: (tooltipItems: { dataIndex: number }[]) => {
             const index = tooltipItems[0].dataIndex;
-            const timestamp = sortedData[index].timestamp;
+            const timestamp = uniqueTimestamps[index];
             const date = parseISO(timestamp);
-            return format(date, "EEEE, d 'de' MMMM 'a las' HH:mm", {
-              locale: es,
-            });
+            return format(date, "dd/MM/yyyy HH:mm", { locale: es });
           },
         },
+      },
+      datalabels: {
+        display: true,
+        align: "top" as const,
+        anchor: "end" as const,
+        color: "#374151",
+        font: {
+          weight: "bold" as const,
+          size: 12,
+        },
+        formatter: function (value: number) {
+          return value !== null ? value.toString() : "";
+        },
+        offset: 4,
       },
     },
     scales: {
@@ -167,7 +192,10 @@ export const HealthChart = ({
     },
   };
 
-  if (data.length === 0) {
+  if (
+    datasets.length === 0 ||
+    datasets.every((dataset) => dataset.data.length === 0)
+  ) {
     return (
       <div className={`text-center py-12 ${className}`}>
         <div className="text-gray-400 text-6xl mb-4">📊</div>
@@ -191,26 +219,39 @@ export const HealthChart = ({
       <div className="mt-4 grid grid-cols-3 gap-4 text-center">
         <div>
           <p className="text-sm text-gray-500">Última</p>
-          <p className="text-lg font-semibold" style={{ color }}>
-            {sortedData[sortedData.length - 1]?.value} {unit}
+          <p
+            className="text-lg font-semibold"
+            style={{ color: datasets[0]?.color }}
+          >
+            {datasets[0]?.data[datasets[0].data.length - 1]?.value || 0} {unit}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-500">Promedio</p>
-          <p className="text-lg font-semibold" style={{ color }}>
-            {Math.round(
-              sortedData.reduce((sum, point) => sum + point.value, 0) /
-                sortedData.length
-            )}{" "}
+          <p
+            className="text-lg font-semibold"
+            style={{ color: datasets[0]?.color }}
+          >
+            {datasets[0]?.data.length
+              ? Math.round(
+                  datasets[0].data.reduce(
+                    (sum: number, point: MeasurementPoint) => sum + point.value,
+                    0
+                  ) / datasets[0].data.length
+                )
+              : 0}{" "}
             {unit}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-500">Tendencia</p>
-          <p className="text-lg font-semibold" style={{ color }}>
-            {sortedData.length >= 2
-              ? sortedData[sortedData.length - 1].value >
-                sortedData[sortedData.length - 2].value
+          <p
+            className="text-lg font-semibold"
+            style={{ color: datasets[0]?.color }}
+          >
+            {datasets[0]?.data.length >= 2
+              ? datasets[0].data[datasets[0].data.length - 1].value >
+                datasets[0].data[datasets[0].data.length - 2].value
                 ? "↗️"
                 : "↘️"
               : "➖"}

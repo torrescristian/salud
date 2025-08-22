@@ -18,10 +18,15 @@ export const ParallelHealthCharts = ({
     value: measurement.value,
   }));
 
-  // Preparar datos para presión (usar presión sistólica como valor principal)
-  const pressureData = pressureMeasurements.map((measurement) => ({
+  // Preparar datos para presión (sistólica y diastólica)
+  const pressureSystolicData = pressureMeasurements.map((measurement) => ({
     timestamp: measurement.timestamp.toISOString(),
     value: measurement.systolic,
+  }));
+
+  const pressureDiastolicData = pressureMeasurements.map((measurement) => ({
+    timestamp: measurement.timestamp.toISOString(),
+    value: measurement.diastolic,
   }));
 
   // Colores para glucemia (verde para valores normales)
@@ -49,12 +54,16 @@ export const ParallelHealthCharts = ({
           </div>
         </div>
         <HealthChart
-          title="Glucemia"
-          data={glucoseData}
+          datasets={[
+            {
+              label: "Glucemia",
+              data: glucoseData,
+              color: glucoseColors.primary,
+              backgroundColor: glucoseColors.background,
+              borderColor: glucoseColors.border,
+            },
+          ]}
           unit="mg/dL"
-          color={glucoseColors.primary}
-          backgroundColor={glucoseColors.background}
-          borderColor={glucoseColors.border}
           minValue={50}
           maxValue={400}
         />
@@ -71,13 +80,24 @@ export const ParallelHealthCharts = ({
           </div>
         </div>
         <HealthChart
-          title="Presión Sistólica"
-          data={pressureData}
+          datasets={[
+            {
+              label: "Presión Sistólica",
+              data: pressureSystolicData,
+              color: pressureColors.primary,
+              backgroundColor: pressureColors.background,
+              borderColor: pressureColors.border,
+            },
+            {
+              label: "Presión Diastólica",
+              data: pressureDiastolicData,
+              color: "#EF4444", // Rojo para diastólica
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              borderColor: "#EF4444",
+            },
+          ]}
           unit="mmHg"
-          color={pressureColors.primary}
-          backgroundColor={pressureColors.background}
-          borderColor={pressureColors.border}
-          minValue={70}
+          minValue={40}
           maxValue={200}
         />
       </div>
