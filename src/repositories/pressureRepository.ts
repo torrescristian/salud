@@ -1,11 +1,15 @@
 import { PressureMeasurement } from "../types/health";
+import { migrateUTCToLocal } from "../utils/healthCalculations";
 
 const STORAGE_KEY = "health_pressure_measurements";
 
 export interface PressureRepository {
   getPressureMeasurements(): PressureMeasurement[];
   savePressureMeasurement(measurement: PressureMeasurement): void;
-  updatePressureMeasurement(id: string, updates: Partial<PressureMeasurement>): void;
+  updatePressureMeasurement(
+    id: string,
+    updates: Partial<PressureMeasurement>
+  ): void;
   deletePressureMeasurement(id: string): void;
 }
 
@@ -31,10 +35,10 @@ class LocalStoragePressureRepository implements PressureRepository {
   getPressureMeasurements(): PressureMeasurement[] {
     const measurements = this.getItem<PressureMeasurement[]>(STORAGE_KEY);
     if (!measurements) return [];
-    
-    return measurements.map(measurement => ({
+
+    return measurements.map((measurement) => ({
       ...measurement,
-      timestamp: new Date(measurement.timestamp),
+      timestamp: migrateUTCToLocal(measurement.timestamp.toString()),
     }));
   }
 
@@ -44,9 +48,12 @@ class LocalStoragePressureRepository implements PressureRepository {
     this.setItem(STORAGE_KEY, measurements);
   }
 
-  updatePressureMeasurement(id: string, updates: Partial<PressureMeasurement>): void {
+  updatePressureMeasurement(
+    id: string,
+    updates: Partial<PressureMeasurement>
+  ): void {
     const measurements = this.getPressureMeasurements();
-    const index = measurements.findIndex(m => m.id === id);
+    const index = measurements.findIndex((m) => m.id === id);
     if (index !== -1) {
       measurements[index] = { ...measurements[index], ...updates };
       this.setItem(STORAGE_KEY, measurements);
@@ -55,7 +62,7 @@ class LocalStoragePressureRepository implements PressureRepository {
 
   deletePressureMeasurement(id: string): void {
     const measurements = this.getPressureMeasurements();
-    const filtered = measurements.filter(m => m.id !== id);
+    const filtered = measurements.filter((m) => m.id !== id);
     this.setItem(STORAGE_KEY, filtered);
   }
 }

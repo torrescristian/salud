@@ -1,11 +1,15 @@
 import { GlucoseMeasurement } from "../types/health";
+import { migrateUTCToLocal } from "../utils/healthCalculations";
 
 const STORAGE_KEY = "health_glucose_measurements";
 
 export interface GlucoseRepository {
   getGlucoseMeasurements(): GlucoseMeasurement[];
   saveGlucoseMeasurement(measurement: GlucoseMeasurement): void;
-  updateGlucoseMeasurement(id: string, updates: Partial<GlucoseMeasurement>): void;
+  updateGlucoseMeasurement(
+    id: string,
+    updates: Partial<GlucoseMeasurement>
+  ): void;
   deleteGlucoseMeasurement(id: string): void;
 }
 
@@ -31,10 +35,10 @@ class LocalStorageGlucoseRepository implements GlucoseRepository {
   getGlucoseMeasurements(): GlucoseMeasurement[] {
     const measurements = this.getItem<GlucoseMeasurement[]>(STORAGE_KEY);
     if (!measurements) return [];
-    
-    return measurements.map(measurement => ({
+
+    return measurements.map((measurement) => ({
       ...measurement,
-      timestamp: new Date(measurement.timestamp),
+      timestamp: migrateUTCToLocal(measurement.timestamp.toString()),
     }));
   }
 
@@ -44,9 +48,12 @@ class LocalStorageGlucoseRepository implements GlucoseRepository {
     this.setItem(STORAGE_KEY, measurements);
   }
 
-  updateGlucoseMeasurement(id: string, updates: Partial<GlucoseMeasurement>): void {
+  updateGlucoseMeasurement(
+    id: string,
+    updates: Partial<GlucoseMeasurement>
+  ): void {
     const measurements = this.getGlucoseMeasurements();
-    const index = measurements.findIndex(m => m.id === id);
+    const index = measurements.findIndex((m) => m.id === id);
     if (index !== -1) {
       measurements[index] = { ...measurements[index], ...updates };
       this.setItem(STORAGE_KEY, measurements);
@@ -55,7 +62,7 @@ class LocalStorageGlucoseRepository implements GlucoseRepository {
 
   deleteGlucoseMeasurement(id: string): void {
     const measurements = this.getGlucoseMeasurements();
-    const filtered = measurements.filter(m => m.id !== id);
+    const filtered = measurements.filter((m) => m.id !== id);
     this.setItem(STORAGE_KEY, filtered);
   }
 }

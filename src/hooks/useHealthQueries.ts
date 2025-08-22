@@ -328,3 +328,32 @@ export function useTodayEntries() {
     queryFn: () => healthService.getTodayEntries(),
   });
 }
+
+// Entries by Date Query
+export function useEntriesByDate(date: string) {
+  return useQuery({
+    queryKey: [...queryKeys.todayEntries, date],
+    queryFn: () => healthService.getEntriesByDate(new Date(date)),
+  });
+}
+
+// All Entries Query
+export function useAllEntries() {
+  return useQuery({
+    queryKey: [...queryKeys.todayEntries, "all"],
+    queryFn: () => healthService.getAllEntries(),
+  });
+}
+
+// Entries by Period Query
+export function useEntriesByPeriod(startDate: Date, endDate: Date) {
+  return useQuery({
+    queryKey: [
+      ...queryKeys.todayEntries,
+      "period",
+      startDate.toISOString(),
+      endDate.toISOString(),
+    ],
+    queryFn: () => healthService.getEntriesByPeriod(startDate, endDate),
+  });
+}

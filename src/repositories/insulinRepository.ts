@@ -1,4 +1,5 @@
 import { InsulinEntry } from "../types/health";
+import { migrateUTCToLocal } from "../utils/healthCalculations";
 
 const STORAGE_KEY = "health_insulin_entries";
 
@@ -31,10 +32,10 @@ class LocalStorageInsulinRepository implements InsulinRepository {
   getInsulinEntries(): InsulinEntry[] {
     const entries = this.getItem<InsulinEntry[]>(STORAGE_KEY);
     if (!entries) return [];
-    
-    return entries.map(entry => ({
+
+    return entries.map((entry) => ({
       ...entry,
-      timestamp: new Date(entry.timestamp),
+      timestamp: migrateUTCToLocal(entry.timestamp.toString()),
     }));
   }
 
@@ -46,7 +47,7 @@ class LocalStorageInsulinRepository implements InsulinRepository {
 
   updateInsulinEntry(id: string, updates: Partial<InsulinEntry>): void {
     const entries = this.getInsulinEntries();
-    const index = entries.findIndex(e => e.id === id);
+    const index = entries.findIndex((e) => e.id === id);
     if (index !== -1) {
       entries[index] = { ...entries[index], ...updates };
       this.setItem(STORAGE_KEY, entries);
@@ -55,7 +56,7 @@ class LocalStorageInsulinRepository implements InsulinRepository {
 
   deleteInsulinEntry(id: string): void {
     const entries = this.getInsulinEntries();
-    const filtered = entries.filter(e => e.id !== id);
+    const filtered = entries.filter((e) => e.id !== id);
     this.setItem(STORAGE_KEY, filtered);
   }
 }

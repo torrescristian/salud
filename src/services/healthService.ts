@@ -1,4 +1,5 @@
 import { userProfileRepository } from "../repositories/userProfileRepository";
+import { createLocalDate } from "../utils/healthCalculations";
 import { medicationRepository } from "../repositories/medicationRepository";
 import { glucoseRepository } from "../repositories/glucoseRepository";
 import { pressureRepository } from "../repositories/pressureRepository";
@@ -11,6 +12,7 @@ import {
   InsulinEntry,
 } from "../types/health";
 import { generateId } from "../utils/idGenerator";
+import { formatTime } from "../utils/healthCalculations";
 
 export interface HealthService {
   // User Profile
@@ -79,6 +81,27 @@ export interface HealthService {
       | InsulinEntry;
   }>;
   getEntriesByDate(date: Date): Array<{
+    type: "medication" | "glucose" | "pressure" | "insulin";
+    time: string;
+    data:
+      | UserMedication
+      | GlucoseMeasurement
+      | PressureMeasurement
+      | InsulinEntry;
+  }>;
+  getAllEntries(): Array<{
+    type: "medication" | "glucose" | "pressure" | "insulin";
+    time: string;
+    data:
+      | UserMedication
+      | GlucoseMeasurement
+      | PressureMeasurement
+      | InsulinEntry;
+  }>;
+  getEntriesByPeriod(
+    startDate: Date,
+    endDate: Date
+  ): Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
     time: string;
     data:
@@ -160,7 +183,7 @@ class HealthServiceImpl implements HealthService {
       userId: "default", // Por ahora usamos un ID por defecto
       value,
       context,
-      timestamp: customDate || new Date(),
+      timestamp: customDate || createLocalDate(),
       status: this.calculateGlucoseStatus(value),
     };
 
@@ -197,7 +220,7 @@ class HealthServiceImpl implements HealthService {
       userId: "default", // Por ahora usamos un ID por defecto
       systolic,
       diastolic,
-      timestamp: customDate || new Date(),
+      timestamp: customDate || createLocalDate(),
       status: this.calculatePressureStatus(systolic, diastolic),
     };
 
@@ -245,7 +268,7 @@ class HealthServiceImpl implements HealthService {
       type,
       context,
       notes,
-      timestamp: customDate || new Date(),
+      timestamp: customDate || createLocalDate(),
     };
 
     insulinRepository.saveInsulinEntry(entry);
@@ -379,6 +402,104 @@ class HealthServiceImpl implements HealthService {
         "timestamp" in b.data ? b.data.timestamp : b.data.lastUsed
       );
       return timeB.getTime() - timeA.getTime();
+    });
+  }
+
+  getAllEntries(): Array<{
+    type: "medication" | "glucose" | "pressure" | "insulin";
+    time: string;
+    data:
+      | UserMedication
+      | GlucoseMeasurement
+      | PressureMeasurement
+      | InsulinEntry;
+  }> {
+    const medications = medicationRepository.getMedications().map((med) => ({
+      type: "medication" as const,
+      time: formatTime(med.lastUsed),
+      data: med,
+    }));
+
+    const glucoseMeasurements = glucoseRepository
+      .getGlucoseMeasurements()
+      .map((glucose) => ({
+        type: "glucose" as const,
+        time: formatTime(glucose.timestamp),
+        data: glucose,
+      }));
+
+    const pressureMeasurements = pressureRepository
+      .getPressureMeasurements()
+      .map((pressure) => ({
+        type: "pressure" as const,
+        time: formatTime(pressure.timestamp),
+        data: pressure,
+      }));
+
+    const insulinEntries = insulinRepository
+      .getInsulinEntries()
+      .map((insulin) => ({
+        type: "insulin" as const,
+        time: formatTime(insulin.timestamp),
+        data: insulin,
+      }));
+
+    const allEntries = [
+      ...medications,
+      ...glucoseMeasurements,
+      ...pressureMeasurements,
+      ...insulinEntries,
+    ];
+
+    // Ordenar por timestamp (más reciente primero)
+    return allEntries.sort((a, b) => {
+      const timeA = new Date(
+        "timestamp" in a.data ? a.data.timestamp : a.data.lastUsed
+      );
+      const timeB = new Date(
+        "timestamp" in b.data ? b.data.timestamp : b.data.lastUsed
+      );
+      return timeB.getTime() - timeA.getTime();
+    });
+  }
+
+  getEntriesByPeriod(
+    startDate: Date,
+    endDate: Date
+  ): Array<{
+    type: "medication" | "glucose" | "pressure" | "insulin";
+    time: string;
+    data:
+      | UserMedication
+      | GlucoseMeasurement
+      | PressureMeasurement
+      | InsulinEntry;
+  }> {
+    const allEntries = this.getAllEntries();
+
+    return allEntries.filter((entry) => {
+      const entryDate = new Date(
+        "timestamp" in entry.data ? entry.data.timestamp : entry.data.lastUsed
+      );
+
+      // Ajustar las fechas de comparación para usar solo la fecha (sin hora)
+      const entryDateOnly = new Date(
+        entryDate.getFullYear(),
+        entryDate.getMonth(),
+        entryDate.getDate()
+      );
+      const startDateOnly = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+      const endDateOnly = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate()
+      );
+
+      return entryDateOnly >= startDateOnly && entryDateOnly <= endDateOnly;
     });
   }
 

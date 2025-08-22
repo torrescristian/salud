@@ -1,11 +1,7 @@
 import { Button } from "../atoms/Button";
-import { DateSelector } from "../molecules/DateSelector";
-import { getCurrentDateString } from "../../utils/healthCalculations";
 
 export interface AppHeaderProps {
   onProfileClick: () => void;
-  currentDate?: string;
-  onDateChange?: (date: string) => void;
   userProfile?: {
     name: string;
     criticalGlucose: { min: number; max: number };
@@ -16,12 +12,7 @@ export interface AppHeaderProps {
   };
 }
 
-export function AppHeader({
-  onProfileClick,
-  currentDate = getCurrentDateString(),
-  onDateChange,
-  userProfile,
-}: AppHeaderProps) {
+export function AppHeader({ onProfileClick, userProfile }: AppHeaderProps) {
   return (
     <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white shadow-lg">
       <div className="max-w-6xl mx-auto px-4 py-3">
@@ -68,46 +59,6 @@ export function AppHeader({
               Perfil
             </Button>
           </div>
-        </div>
-
-        {/* Barra de Información */}
-        <div className="flex items-center justify-between">
-          {/* Fecha y Navegación */}
-          <div className="flex items-center space-x-4">
-            <DateSelector
-              currentDate={currentDate}
-              onDateChange={onDateChange || (() => {})}
-            />
-          </div>
-
-          {/* Indicadores de Estado */}
-          {userProfile && (
-            <div className="hidden lg:flex items-center space-x-4">
-              {/* Indicador de Glucemia */}
-              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-2 py-1">
-                <span className="text-yellow-300 text-sm">📊</span>
-                <div className="text-left">
-                  <p className="text-xs text-blue-100">Glucemia</p>
-                  <p className="text-xs font-semibold">
-                    {userProfile.criticalGlucose.min}-
-                    {userProfile.criticalGlucose.max} mg/dL
-                  </p>
-                </div>
-              </div>
-
-              {/* Indicador de Presión */}
-              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-2 py-1">
-                <span className="text-red-300 text-sm">❤️</span>
-                <div className="text-left">
-                  <p className="text-xs text-blue-100">Presión</p>
-                  <p className="text-xs font-semibold">
-                    {userProfile.criticalPressure.systolic.min}/
-                    {userProfile.criticalPressure.diastolic.min} mmHg
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </header>

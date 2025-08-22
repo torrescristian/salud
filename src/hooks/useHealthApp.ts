@@ -10,12 +10,12 @@ import {
 } from "../types/health";
 import { LocalStorage } from "../utils/localStorage";
 import {
-  generateId,
   getCurrentDateString,
   getCurrentTimeString,
   calculateGlucoseStatus,
   calculatePressureStatus,
 } from "../utils/healthCalculations";
+import { generateId } from "@/utils/idGenerator";
 
 // Estado inicial de la aplicación
 const initialState: AppState = {

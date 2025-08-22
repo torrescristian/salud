@@ -6,7 +6,6 @@ import {
   InsulinEntry,
 } from "../../types/health";
 import { EntryCard } from "../molecules/EntryCard";
-import { StatusIndicator } from "../atoms/StatusIndicator";
 
 export interface DailySummaryProps {
   entries: DailyEntry["entries"];
@@ -18,6 +17,7 @@ export interface DailySummaryProps {
       | PressureMeasurement
       | InsulinEntry
   ) => void;
+  date?: string;
 }
 
 // Funciones auxiliares para obtener texto de relación con comida
@@ -36,16 +36,24 @@ function getFoodRelationText(withFood: string): string {
   }
 }
 
-export function DailySummary({ entries, onEditEntry }: DailySummaryProps) {
+export function DailySummary({
+  entries,
+  onEditEntry,
+  date,
+}: DailySummaryProps) {
+  const isToday = date
+    ? new Date(date).toDateString() === new Date().toDateString()
+    : true;
+  const title = isToday ? "HOY - Resumen" : `${date} - Resumen`;
+
   if (entries.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
-          HOY - Resumen
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">{title}</h2>
         <p className="text-gray-500 text-center py-8">
-          No hay registros para hoy. ¡Comienza agregando tu primera medicación o
-          medición!
+          {isToday
+            ? "No hay registros para hoy. ¡Comienza agregando tu primera medicación o medición!"
+            : "No hay registros para esta fecha."}
         </p>
       </div>
     );
@@ -53,9 +61,7 @@ export function DailySummary({ entries, onEditEntry }: DailySummaryProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        HOY - Resumen
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">{title}</h2>
 
       <div className="space-y-4">
         {entries.map((entry, index) => {
@@ -66,9 +72,10 @@ export function DailySummary({ entries, onEditEntry }: DailySummaryProps) {
                 <EntryCard
                   key={index}
                   time={entry.time}
-                  icon="✅"
+                  icon="💊"
                   title={data.name}
-                  subtitle={`(${getFoodRelationText(data.withFood)})`}
+                  subtitle={`${getFoodRelationText(data.withFood)}`}
+                  statusType="normal"
                   onEdit={() => onEditEntry("medication", data)}
                 />
               );
@@ -82,7 +89,7 @@ export function DailySummary({ entries, onEditEntry }: DailySummaryProps) {
                   time={entry.time}
                   icon="📊"
                   title={`Glucemia: ${data.value} mg/dL`}
-                  status={<StatusIndicator status={data.status} />}
+                  statusType={data.status}
                   onEdit={() => onEditEntry("glucose", data)}
                 />
               );
@@ -96,7 +103,7 @@ export function DailySummary({ entries, onEditEntry }: DailySummaryProps) {
                   time={entry.time}
                   icon="❤️"
                   title={`Presión: ${data.systolic}/${data.diastolic} mmHg`}
-                  status={<StatusIndicator status={data.status} />}
+                  statusType={data.status}
                   onEdit={() => onEditEntry("pressure", data)}
                 />
               );
@@ -109,7 +116,9 @@ export function DailySummary({ entries, onEditEntry }: DailySummaryProps) {
                   key={index}
                   time={entry.time}
                   icon="💉"
-                  title={`Insulina: ${data.dose} unidades (${data.type})`}
+                  title={`Insulina: ${data.dose} unidades`}
+                  subtitle={`(${data.type})`}
+                  statusType="normal"
                   onEdit={() => onEditEntry("insulin", data)}
                 />
               );

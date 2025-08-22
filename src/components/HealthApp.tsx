@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createLocalDate } from "../utils/healthCalculations";
 import {
   useUserProfile,
   useUpdateUserProfile,
@@ -11,7 +12,10 @@ import {
   useUpdatePressureMeasurement,
   useAddInsulinEntry,
   useUpdateInsulinEntry,
-  useTodayEntries,
+  useAllEntries,
+  useGlucoseMeasurements,
+  usePressureMeasurements,
+  useInsulinEntries,
 } from "../hooks/useHealthQueries";
 import {
   UserMedication,
@@ -23,10 +27,13 @@ import {
 // Atomic Design Components
 import { SetupCard } from "./organisms/SetupCard";
 import { AppHeader } from "./organisms/AppHeader";
-import { DailySummary } from "./organisms/DailySummary";
 import { ActionGrid } from "./organisms/ActionGrid";
 import { ProfileForm } from "./organisms/ProfileForm";
 import { StackPage } from "./organisms/StackPage";
+import { MobileNavigation, NavigationTab } from "./organisms/MobileNavigation";
+import { AdvancedFilters, FilterPeriod } from "./organisms/AdvancedFilters";
+import { AnalyticsView } from "./organisms/AnalyticsView";
+import { EntriesByDay } from "./organisms/EntriesByDay";
 
 // Form Components
 import { MedicationEntryForm } from "./molecules/MedicationEntryForm";
@@ -46,7 +53,18 @@ export function HealthApp() {
   const updatePressureMutation = useUpdatePressureMeasurement();
   const addInsulinMutation = useAddInsulinEntry();
   const updateInsulinMutation = useUpdateInsulinEntry();
-  const { data: todayEntries } = useTodayEntries();
+  const { data: allEntries } = useAllEntries();
+  const { data: glucoseMeasurements } = useGlucoseMeasurements();
+  const { data: pressureMeasurements } = usePressureMeasurements();
+  const { data: insulinEntries } = useInsulinEntries();
+
+  // Navigation state
+  const [activeTab, setActiveTab] = useState<NavigationTab>("home");
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("day");
+  const [filterStartDate, setFilterStartDate] = useState<Date>(
+    createLocalDate()
+  );
+  const [filterEndDate, setFilterEndDate] = useState<Date>(createLocalDate());
 
   // Stack page states
   const [showMedicationForm, setShowMedicationForm] = useState(false);
@@ -97,6 +115,17 @@ export function HealthApp() {
     setEditingEntry(null);
   };
 
+  // Handle filter period change
+  const handleFilterPeriodChange = (
+    period: FilterPeriod,
+    startDate: Date,
+    endDate: Date
+  ) => {
+    setFilterPeriod(period);
+    setFilterStartDate(startDate);
+    setFilterEndDate(endDate);
+  };
+
   // Si no hay perfil, mostrar configuración inicial
   if (!userProfile) {
     return (
@@ -118,29 +147,51 @@ export function HealthApp() {
   // No necesitamos esta línea ya que usamos el hook useTodayEntries
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       <AppHeader
         onProfileClick={() => setShowProfileForm(true)}
-        currentDate={new Date().toISOString().split("T")[0]}
         userProfile={userProfile}
-        onDateChange={(date) => {
-          // Aquí podrías implementar la lógica para cambiar la fecha
-          // Por ahora solo actualizamos el estado
-          console.log("Cambiando fecha a:", date);
-        }}
       />
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
-        <ActionGrid
-          onMedicationClick={() => setShowMedicationForm(true)}
-          onGlucoseClick={() => setShowGlucoseForm(true)}
-          onPressureClick={() => setShowPressureForm(true)}
-          onInsulinClick={() => setShowInsulinForm(true)}
-        />
-        <DailySummary
-          entries={todayEntries || []}
-          onEditEntry={handleEditEntry}
-        />
+      <main className="max-w-4xl mx-auto px-4 py-4">
+        {activeTab === "home" && (
+          <>
+            <ActionGrid
+              onMedicationClick={() => setShowMedicationForm(true)}
+              onGlucoseClick={() => setShowGlucoseForm(true)}
+              onPressureClick={() => setShowPressureForm(true)}
+              onInsulinClick={() => setShowInsulinForm(true)}
+            />
+            <EntriesByDay
+              entries={allEntries || []}
+              onEditEntry={handleEditEntry}
+            />
+          </>
+        )}
+
+        {activeTab === "filters" && (
+          <AdvancedFilters
+            onPeriodChange={handleFilterPeriodChange}
+            entries={allEntries || []}
+            onEditEntry={handleEditEntry}
+          />
+        )}
+
+        {/* Debug info - remove later */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="text-xs text-gray-400 mt-4">
+            Filter: {filterPeriod} | Start: {filterStartDate.toDateString()} |
+            End: {filterEndDate.toDateString()}
+          </div>
+        )}
+
+        {activeTab === "analytics" && (
+          <AnalyticsView
+            glucoseMeasurements={glucoseMeasurements || []}
+            pressureMeasurements={pressureMeasurements || []}
+            insulinEntries={insulinEntries || []}
+          />
+        )}
 
         {/* Stack Pages */}
         {showMedicationForm && (
@@ -164,7 +215,10 @@ export function HealthApp() {
                 if (editingEntry && editingEntry.type === "medication") {
                   updateMedicationMutation.mutate({
                     id: editingEntry.data.id,
-                    updates: { withFood, lastUsed: customDate || new Date() },
+                    updates: {
+                      withFood,
+                      lastUsed: customDate || createLocalDate(),
+                    },
                   });
                   resetEditingState();
                 } else {
@@ -222,7 +276,7 @@ export function HealthApp() {
                     updates: {
                       value,
                       context,
-                      timestamp: customDate || new Date(),
+                      timestamp: customDate || createLocalDate(),
                     },
                   });
                   resetEditingState();
@@ -282,7 +336,7 @@ export function HealthApp() {
                     updates: {
                       systolic,
                       diastolic,
-                      timestamp: customDate || new Date(),
+                      timestamp: customDate || createLocalDate(),
                     },
                   });
                   resetEditingState();
@@ -347,7 +401,7 @@ export function HealthApp() {
                       type,
                       context,
                       notes,
-                      timestamp: customDate || new Date(),
+                      timestamp: customDate || createLocalDate(),
                     },
                   });
                   resetEditingState();
@@ -407,6 +461,9 @@ export function HealthApp() {
           />
         )}
       </main>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 }

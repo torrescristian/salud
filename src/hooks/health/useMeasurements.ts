@@ -9,9 +9,9 @@ import {
 import {
   calculateGlucoseStatus,
   calculatePressureStatus,
-  generateId,
   getCurrentTimeString,
 } from "../../utils/healthCalculations";
+import { generateId } from "@/utils/idGenerator";
 
 export function useMeasurements(
   state: AppState,

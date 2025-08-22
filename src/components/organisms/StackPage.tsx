@@ -17,9 +17,9 @@ export function StackPage({
   className = "",
 }: StackPageProps) {
   return (
-    <div className={`fixed inset-0 bg-white z-50 ${className}`}>
+    <div className={`fixed inset-0 bg-white z-50 flex flex-col ${className}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white px-4 py-3 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white px-4 py-3 shadow-lg flex-shrink-0">
         <div className="flex items-center space-x-3">
           {showBackButton && (
             <Button
@@ -36,7 +36,7 @@ export function StackPage({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">{children}</div>
+      <div className="flex-1 overflow-y-auto p-6 pb-24">{children}</div>
     </div>
   );
 }
