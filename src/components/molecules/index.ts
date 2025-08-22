@@ -4,5 +4,7 @@ export { DateTimeField } from "./DateTimeField";
 export { EntryCard } from "./EntryCard";
 export { FormField } from "./FormField";
 export { UnifiedEntryCard } from "./UnifiedEntryCard";
+export { HealthChart } from "./HealthChart";
+export { ParallelHealthCharts } from "./ParallelHealthCharts";
 export { MedicationEntryForm } from "./MedicationEntryForm";
 export { RadioGroup } from "./RadioGroup";
