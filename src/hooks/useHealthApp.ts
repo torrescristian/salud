@@ -129,6 +129,7 @@ export function useHealthApp() {
         todayEntry.entries.push({
           type: "medication",
           time: currentTime,
+          date: state.currentDate,
           data: medication || {
             id: generateId(),
             name: medicationName,
@@ -154,6 +155,7 @@ export function useHealthApp() {
             {
               type: "medication",
               time: currentTime,
+              date: state.currentDate,
               data: medication || {
                 id: generateId(),
                 name: medicationName,
@@ -229,6 +231,7 @@ export function useHealthApp() {
         todayEntry.entries.push({
           type: "glucose",
           time: currentTime,
+          date: state.currentDate,
           data: newMeasurement,
         });
 
@@ -247,6 +250,7 @@ export function useHealthApp() {
             {
               type: "glucose",
               time: currentTime,
+              date: state.currentDate,
               data: newMeasurement,
             },
           ],
@@ -300,6 +304,7 @@ export function useHealthApp() {
         todayEntry.entries.push({
           type: "pressure",
           time: currentTime,
+          date: state.currentDate,
           data: newMeasurement,
         });
 
@@ -318,6 +323,7 @@ export function useHealthApp() {
             {
               type: "pressure",
               time: currentTime,
+              date: state.currentDate,
               data: newMeasurement,
             },
           ],
@@ -372,6 +378,7 @@ export function useHealthApp() {
         todayEntry.entries.push({
           type: "insulin",
           time: currentTime,
+          date: state.currentDate,
           data: newEntry,
         });
 
@@ -390,6 +397,7 @@ export function useHealthApp() {
             {
               type: "insulin",
               time: currentTime,
+              date: state.currentDate,
               data: newEntry,
             },
           ],

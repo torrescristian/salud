@@ -78,15 +78,6 @@ export function AnalyticsView({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Análisis Semanal
-        </h2>
-        <p className="text-gray-600">
-          Resumen de tus mediciones de la semana actual
-        </p>
-      </div>
-
       {/* Resumen de la Semana */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-blue-50 rounded-lg p-4">

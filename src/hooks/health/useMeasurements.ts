@@ -59,6 +59,7 @@ export function useMeasurements(
         todayEntry.entries.push({
           type: "glucose",
           time: currentTime,
+          date: state.currentDate,
           data: newMeasurement,
         });
 
@@ -77,6 +78,7 @@ export function useMeasurements(
             {
               type: "glucose",
               time: currentTime,
+              date: state.currentDate,
               data: newMeasurement,
             },
           ],
@@ -130,6 +132,7 @@ export function useMeasurements(
         todayEntry.entries.push({
           type: "pressure",
           time: currentTime,
+          date: state.currentDate,
           data: newMeasurement,
         });
 
@@ -148,6 +151,7 @@ export function useMeasurements(
             {
               type: "pressure",
               time: currentTime,
+              date: state.currentDate,
               data: newMeasurement,
             },
           ],
@@ -202,6 +206,7 @@ export function useMeasurements(
         todayEntry.entries.push({
           type: "insulin",
           time: currentTime,
+          date: state.currentDate,
           data: newEntry,
         });
 
@@ -220,6 +225,7 @@ export function useMeasurements(
             {
               type: "insulin",
               time: currentTime,
+              date: state.currentDate,
               data: newEntry,
             },
           ],

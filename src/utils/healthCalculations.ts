@@ -139,11 +139,9 @@ export function toLocalISOString(date: Date): string {
 
 // Migrar timestamps UTC existentes a zona local
 export function migrateUTCToLocal(timestampString: string): Date {
-  console.log("🚀 migrateUTCToLocal LLAMADA CON:", timestampString);
   try {
     // Validar que el string no esté vacío
     if (!timestampString || typeof timestampString !== "string") {
-      console.warn("migrateUTCToLocal: timestamp inválido:", timestampString);
       return new Date(); // Fallback a fecha actual
     }
 
@@ -152,19 +150,6 @@ export function migrateUTCToLocal(timestampString: string): Date {
       // Usar la utilidad de dateUtils para conversión UTC a local
       const localDate = utcDate(timestampString);
 
-      // Debug: agregar logs para entender qué está pasando
-      const originalUtcDate = new Date(timestampString);
-      console.log("🔧 migrateUTCToLocal EJECUTANDOSE:", {
-        input: timestampString,
-        utcDate: originalUtcDate.toString(),
-        utcISO: originalUtcDate.toISOString(),
-        localDate: localDate.toString(),
-        localISO: localDate.toISOString(),
-        dateKey: `${localDate.getFullYear()}-${String(
-          localDate.getMonth() + 1
-        ).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`,
-      });
-
       return localDate;
     } else {
       // Si no tiene 'Z', asumimos que ya está en formato local
@@ -172,21 +157,13 @@ export function migrateUTCToLocal(timestampString: string): Date {
 
       // Validar que la fecha sea válida
       if (isNaN(localDate.getTime())) {
-        console.warn(
-          "migrateUTCToLocal: fecha local inválida:",
-          timestampString
-        );
         return new Date(); // Fallback a fecha actual
       }
 
       return localDate;
     }
   } catch (error) {
-    console.error(
-      "migrateUTCToLocal: error procesando timestamp:",
-      timestampString,
-      error
-    );
+    console.error("Error al migrar fecha UTC a local:", error);
     return new Date(); // Fallback a fecha actual
   }
 }

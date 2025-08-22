@@ -45,6 +45,7 @@ describe("EntriesByDay", () => {
     {
       type: "medication" as const,
       time: "10:00",
+      date: "2024-01-15",
       data: {
         id: "1",
         name: "Aspirina",
@@ -56,6 +57,7 @@ describe("EntriesByDay", () => {
     {
       type: "glucose" as const,
       time: "12:00",
+      date: "2024-01-15",
       data: {
         id: "2",
         userId: "user1",
@@ -68,6 +70,7 @@ describe("EntriesByDay", () => {
     {
       type: "pressure" as const,
       time: "14:00",
+      date: "2024-01-14",
       data: {
         id: "3",
         userId: "user1",
@@ -80,6 +83,7 @@ describe("EntriesByDay", () => {
     {
       type: "insulin" as const,
       time: "16:00",
+      date: "2024-01-14",
       data: {
         id: "4",
         userId: "user1",

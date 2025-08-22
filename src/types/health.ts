@@ -53,6 +53,7 @@ export interface DailyEntry {
   entries: Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
     time: string; // HH:MM
+    date: string; // YYYY-MM-DD
     data:
       | UserMedication
       | GlucoseMeasurement

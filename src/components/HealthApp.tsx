@@ -31,9 +31,7 @@ import { ActionGrid } from "./organisms/ActionGrid";
 import { ProfileForm } from "./organisms/ProfileForm";
 import { StackPage } from "./organisms/StackPage";
 import { MobileNavigation, NavigationTab } from "./organisms/MobileNavigation";
-import { AdvancedFilters, FilterPeriod } from "./organisms/AdvancedFilters";
-import { AnalyticsView } from "./organisms/AnalyticsView";
-import { EntriesByDay } from "./organisms/EntriesByDay";
+import { HomePage, FiltersPage, AnalyticsPage } from "./pages";
 
 // Form Components
 import { MedicationEntryForm } from "./molecules/MedicationEntryForm";
@@ -60,11 +58,6 @@ export function HealthApp() {
 
   // Navigation state
   const [activeTab, setActiveTab] = useState<NavigationTab>("home");
-  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>("day");
-  const [filterStartDate, setFilterStartDate] = useState<Date>(
-    createLocalDate()
-  );
-  const [filterEndDate, setFilterEndDate] = useState<Date>(createLocalDate());
 
   // Stack page states
   const [showMedicationForm, setShowMedicationForm] = useState(false);
@@ -115,17 +108,6 @@ export function HealthApp() {
     setEditingEntry(null);
   };
 
-  // Handle filter period change
-  const handleFilterPeriodChange = (
-    period: FilterPeriod,
-    startDate: Date,
-    endDate: Date
-  ) => {
-    setFilterPeriod(period);
-    setFilterStartDate(startDate);
-    setFilterEndDate(endDate);
-  };
-
   // Si no hay perfil, mostrar configuración inicial
   if (!userProfile) {
     return (
@@ -162,7 +144,7 @@ export function HealthApp() {
               onPressureClick={() => setShowPressureForm(true)}
               onInsulinClick={() => setShowInsulinForm(true)}
             />
-            <EntriesByDay
+            <HomePage
               entries={allEntries || []}
               onEditEntry={handleEditEntry}
             />
@@ -170,23 +152,14 @@ export function HealthApp() {
         )}
 
         {activeTab === "filters" && (
-          <AdvancedFilters
-            onPeriodChange={handleFilterPeriodChange}
+          <FiltersPage
             entries={allEntries || []}
             onEditEntry={handleEditEntry}
           />
         )}
 
-        {/* Debug info - remove later */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="text-xs text-gray-400 mt-4">
-            Filter: {filterPeriod} | Start: {filterStartDate.toDateString()} |
-            End: {filterEndDate.toDateString()}
-          </div>
-        )}
-
         {activeTab === "analytics" && (
-          <AnalyticsView
+          <AnalyticsPage
             glucoseMeasurements={glucoseMeasurements || []}
             pressureMeasurements={pressureMeasurements || []}
             insulinEntries={insulinEntries || []}

@@ -1,9 +1,7 @@
 import { useCallback } from "react";
 import { AppState, UserProfile } from "../../types/health";
-import {
-  getCurrentTimeString,
-  generateId,
-} from "../../utils/healthCalculations";
+import { getCurrentTimeString } from "../../utils/healthCalculations";
+import { generateId } from "../../utils/idGenerator";
 
 export function useHealthActions(
   state: AppState,
@@ -72,6 +70,7 @@ export function useHealthActions(
         todayEntry.entries.push({
           type: "medication",
           time: currentTime,
+          date: state.currentDate,
           data: medication,
         });
 
@@ -90,6 +89,7 @@ export function useHealthActions(
             {
               type: "medication" as const,
               time: currentTime,
+              date: state.currentDate,
               data: medication,
             },
           ],

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "../atoms/Input";
+import { UnifiedEntryCard } from "../molecules/UnifiedEntryCard";
 import {
   UserMedication,
   GlucoseMeasurement,
@@ -26,11 +27,6 @@ import { es } from "date-fns/locale";
 export type FilterPeriod = "day" | "week" | "month";
 
 export interface AdvancedFiltersProps {
-  onPeriodChange: (
-    period: FilterPeriod,
-    startDate: Date,
-    endDate: Date
-  ) => void;
   className?: string;
   entries?: Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
@@ -52,7 +48,6 @@ export interface AdvancedFiltersProps {
 }
 
 export function AdvancedFilters({
-  onPeriodChange,
   className = "",
   entries = [],
   onEditEntry,
@@ -68,8 +63,6 @@ export function AdvancedFilters({
   const [filteredEntries, setFilteredEntries] = useState<typeof entries>([]);
 
   // Usar useRef para evitar el loop infinito
-  const onPeriodChangeRef = useRef(onPeriodChange);
-  onPeriodChangeRef.current = onPeriodChange;
 
   // Generar opciones de semanas (últimas 12 semanas)
   const weekOptions = eachWeekOfInterval(
@@ -156,8 +149,6 @@ export function AdvancedFilters({
         }
         break;
     }
-
-    onPeriodChangeRef.current(selectedPeriod, startDate, endDate);
 
     // Filtrar los registros localmente
     if (entries.length > 0) {
@@ -284,15 +275,6 @@ export function AdvancedFilters({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Filtros Avanzados
-        </h2>
-        <p className="text-gray-600">
-          Selecciona el período que deseas visualizar
-        </p>
-      </div>
-
       {/* Selector de Período */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-700">Tipo de Período</h3>
@@ -393,63 +375,13 @@ export function AdvancedFilters({
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredEntries.map((entry, index) => {
-              let icon = "📋";
-              let title = "Registro";
-              let subtitle = "";
-
-              switch (entry.type) {
-                case "medication":
-                  icon = "💊";
-                  title = (entry.data as UserMedication).name;
-                  subtitle = `Tomado a las ${entry.time}`;
-                  break;
-                case "glucose":
-                  icon = "📊";
-                  title = `Glucemia: ${
-                    (entry.data as GlucoseMeasurement).value
-                  } mg/dL`;
-                  subtitle = `Medido a las ${entry.time}`;
-                  break;
-                case "pressure":
-                  icon = "❤️";
-                  title = `Presión: ${
-                    (entry.data as PressureMeasurement).systolic
-                  }/${(entry.data as PressureMeasurement).diastolic} mmHg`;
-                  subtitle = `Medido a las ${entry.time}`;
-                  break;
-                case "insulin":
-                  icon = "💉";
-                  title = `Insulina: ${
-                    (entry.data as InsulinEntry).dose
-                  } unidades`;
-                  subtitle = `Aplicada a las ${entry.time}`;
-                  break;
-              }
-
-              return (
-                <div
-                  key={`${entry.type}-${index}`}
-                  className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{icon}</span>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-800">{title}</div>
-                      <div className="text-sm text-gray-600">{subtitle}</div>
-                    </div>
-                    {onEditEntry && (
-                      <button
-                        onClick={() => onEditEntry(entry.type, entry.data)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Editar
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {filteredEntries.map((entry, index) => (
+              <UnifiedEntryCard
+                key={`${entry.type}-${entry.data.id}-${index}`}
+                entry={entry}
+                onEditEntry={onEditEntry || (() => {})}
+              />
+            ))}
           </div>
         )}
       </div>

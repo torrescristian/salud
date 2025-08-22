@@ -3,9 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { AdvancedFilters } from "../../components/organisms/AdvancedFilters";
 
 describe("AdvancedFilters", () => {
-  const mockOnPeriodChange = vi.fn();
+  const mockOnEditEntry = vi.fn();
   const defaultProps = {
-    onPeriodChange: mockOnPeriodChange,
+    entries: [],
+    onEditEntry: mockOnEditEntry,
   };
 
   beforeEach(() => {
@@ -15,10 +16,8 @@ describe("AdvancedFilters", () => {
   it("debe renderizar correctamente", () => {
     render(<AdvancedFilters {...defaultProps} />);
 
-    expect(screen.getByText("Filtros Avanzados")).toBeInTheDocument();
-    expect(
-      screen.getByText("Selecciona el período que deseas visualizar")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Tipo de Período")).toBeInTheDocument();
+    expect(screen.getByText("Seleccionar Fecha")).toBeInTheDocument();
   });
 
   it("debe mostrar los tres botones de período", () => {
@@ -37,41 +36,29 @@ describe("AdvancedFilters", () => {
     expect(screen.getByDisplayValue(/202\d-\d{2}-\d{2}/)).toBeInTheDocument();
   });
 
-  it("debe llamar onPeriodChange automáticamente al renderizar", () => {
+  it("debe renderizar correctamente sin errores", () => {
     render(<AdvancedFilters {...defaultProps} />);
 
-    // El componente debe llamar automáticamente a onPeriodChange cuando se monta
-    expect(mockOnPeriodChange).toHaveBeenCalledWith(
-      "day",
-      expect.any(Date),
-      expect.any(Date)
-    );
+    // El componente debe renderizar sin errores
+    expect(screen.getByText("Tipo de Período")).toBeInTheDocument();
   });
 
   it("debe cambiar al período semana cuando se hace clic en Semana", () => {
     render(<AdvancedFilters {...defaultProps} />);
-    vi.clearAllMocks(); // Limpiar la llamada inicial
 
     fireEvent.click(screen.getByText("Semana"));
 
-    expect(mockOnPeriodChange).toHaveBeenCalledWith(
-      "week",
-      expect.any(Date),
-      expect.any(Date)
-    );
+    // Verificar que se muestra el selector de semana
+    expect(screen.getByText("Seleccionar Semana")).toBeInTheDocument();
   });
 
   it("debe cambiar al período mes cuando se hace clic en Mes", () => {
     render(<AdvancedFilters {...defaultProps} />);
-    vi.clearAllMocks(); // Limpiar la llamada inicial
 
     fireEvent.click(screen.getByText("Mes"));
 
-    expect(mockOnPeriodChange).toHaveBeenCalledWith(
-      "month",
-      expect.any(Date),
-      expect.any(Date)
-    );
+    // Verificar que se muestra el selector de mes
+    expect(screen.getByText("Seleccionar Mes")).toBeInTheDocument();
   });
 
   it("debe mostrar dropdown de semanas cuando se selecciona Semana", () => {
@@ -92,18 +79,14 @@ describe("AdvancedFilters", () => {
     expect(screen.getByText("Mes actual")).toBeInTheDocument(); // Opción por defecto
   });
 
-  it("debe aplicar fecha automáticamente cuando se cambia la fecha", () => {
+  it("debe cambiar la fecha cuando se selecciona una nueva fecha", () => {
     render(<AdvancedFilters {...defaultProps} />);
-    vi.clearAllMocks(); // Limpiar la llamada inicial
 
     const dateInput = screen.getByDisplayValue(/202\d-\d{2}-\d{2}/);
     fireEvent.change(dateInput, { target: { value: "2025-01-20" } });
 
-    expect(mockOnPeriodChange).toHaveBeenCalledWith(
-      "day",
-      expect.any(Date),
-      expect.any(Date)
-    );
+    // Verificar que la fecha cambió
+    expect(dateInput).toHaveValue("2025-01-20");
   });
 
   it("debe mostrar el resumen del período actual", () => {

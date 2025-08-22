@@ -6,7 +6,7 @@ import {
   PressureMeasurement,
   InsulinEntry,
 } from "../../types/health";
-import { EntryCard } from "../molecules/EntryCard";
+import { UnifiedEntryCard } from "../molecules/UnifiedEntryCard";
 
 export interface AllEntriesListProps {
   entries: DailyEntry["entries"];
@@ -19,22 +19,6 @@ export interface AllEntriesListProps {
       | InsulinEntry
   ) => void;
   className?: string;
-}
-
-// Funciones auxiliares para obtener texto de relación con comida
-function getFoodRelationText(withFood: string): string {
-  switch (withFood) {
-    case "before":
-      return "antes de comer";
-    case "during":
-      return "durante la comida";
-    case "after":
-      return "después de comer";
-    case "none":
-      return "sin relación con comida";
-    default:
-      return "";
-  }
 }
 
 export function AllEntriesList({
@@ -117,91 +101,26 @@ export function AllEntriesList({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          Todos los Registros
-        </h2>
-        <p className="text-gray-600">{entries.length} registros en total</p>
-      </div>
-
       <div className="space-y-3">
         {displayedEntries.map((entry, index) => {
           const isLast = index === displayedEntries.length - 1;
 
-          const entryElement = () => {
-            switch (entry.type) {
-              case "medication": {
-                const data = entry.data as UserMedication;
-                return (
-                  <EntryCard
-                    key={`${entry.type}-${data.id}-${index}`}
-                    time={entry.time}
-                    icon="💊"
-                    title={data.name}
-                    subtitle={`${getFoodRelationText(data.withFood)}`}
-                    statusType="normal"
-                    onEdit={() => onEditEntry("medication", data)}
-                  />
-                );
-              }
-
-              case "glucose": {
-                const data = entry.data as GlucoseMeasurement;
-                return (
-                  <EntryCard
-                    key={`${entry.type}-${data.id}-${index}`}
-                    time={entry.time}
-                    icon="📊"
-                    title={`Glucemia: ${data.value} mg/dL`}
-                    statusType={data.status}
-                    onEdit={() => onEditEntry("glucose", data)}
-                  />
-                );
-              }
-
-              case "pressure": {
-                const data = entry.data as PressureMeasurement;
-                return (
-                  <EntryCard
-                    key={`${entry.type}-${data.id}-${index}`}
-                    time={entry.time}
-                    icon="❤️"
-                    title={`Presión: ${data.systolic}/${data.diastolic} mmHg`}
-                    statusType={data.status}
-                    onEdit={() => onEditEntry("pressure", data)}
-                  />
-                );
-              }
-
-              case "insulin": {
-                const data = entry.data as InsulinEntry;
-                return (
-                  <EntryCard
-                    key={`${entry.type}-${data.id}-${index}`}
-                    time={entry.time}
-                    icon="💉"
-                    title={`Insulina: ${data.dose} unidades`}
-                    subtitle={`(${data.type})`}
-                    statusType="normal"
-                    onEdit={() => onEditEntry("insulin", data)}
-                  />
-                );
-              }
-
-              default:
-                return null;
-            }
-          };
-
           if (isLast) {
             return (
-              <div key={`${entry.type}-${index}`} ref={lastEntryRef}>
-                {entryElement()}
+              <div
+                key={`${entry.type}-${entry.data.id}-${index}`}
+                ref={lastEntryRef}
+              >
+                <UnifiedEntryCard entry={entry} onEditEntry={onEditEntry} />
               </div>
             );
           }
 
-          return <div key={`${entry.type}-${index}`}>{entryElement()}</div>;
+          return (
+            <div key={`${entry.type}-${entry.data.id}-${index}`}>
+              <UnifiedEntryCard entry={entry} onEditEntry={onEditEntry} />
+            </div>
+          );
         })}
       </div>
 

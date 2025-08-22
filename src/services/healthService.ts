@@ -300,6 +300,7 @@ class HealthServiceImpl implements HealthService {
   getEntriesByDate(date: Date): Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
     time: string;
+    date: string;
     data:
       | UserMedication
       | GlucoseMeasurement
@@ -314,6 +315,7 @@ class HealthServiceImpl implements HealthService {
     const entries: Array<{
       type: "medication" | "glucose" | "pressure" | "insulin";
       time: string;
+      date: string;
       data:
         | UserMedication
         | GlucoseMeasurement
@@ -334,6 +336,7 @@ class HealthServiceImpl implements HealthService {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        date: med.lastUsed.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: med,
       });
     });
@@ -353,6 +356,7 @@ class HealthServiceImpl implements HealthService {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        date: measurement.timestamp.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: measurement,
       });
     });
@@ -372,6 +376,7 @@ class HealthServiceImpl implements HealthService {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        date: measurement.timestamp.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: measurement,
       });
     });
@@ -389,6 +394,7 @@ class HealthServiceImpl implements HealthService {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        date: entry.timestamp.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: entry,
       });
     });
@@ -408,6 +414,7 @@ class HealthServiceImpl implements HealthService {
   getAllEntries(): Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
     time: string;
+    date: string;
     data:
       | UserMedication
       | GlucoseMeasurement
@@ -417,6 +424,7 @@ class HealthServiceImpl implements HealthService {
     const medications = medicationRepository.getMedications().map((med) => ({
       type: "medication" as const,
       time: formatTime(med.lastUsed),
+      date: med.lastUsed.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
       data: med,
     }));
 
@@ -425,6 +433,7 @@ class HealthServiceImpl implements HealthService {
       .map((glucose) => ({
         type: "glucose" as const,
         time: formatTime(glucose.timestamp),
+        date: glucose.timestamp.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: glucose,
       }));
 
@@ -433,6 +442,7 @@ class HealthServiceImpl implements HealthService {
       .map((pressure) => ({
         type: "pressure" as const,
         time: formatTime(pressure.timestamp),
+        date: pressure.timestamp.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: pressure,
       }));
 
@@ -441,6 +451,7 @@ class HealthServiceImpl implements HealthService {
       .map((insulin) => ({
         type: "insulin" as const,
         time: formatTime(insulin.timestamp),
+        date: insulin.timestamp.toLocaleDateString("en-CA"), // Formato YYYY-MM-DD en zona horaria local
         data: insulin,
       }));
 
@@ -469,6 +480,7 @@ class HealthServiceImpl implements HealthService {
   ): Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
     time: string;
+    date: string;
     data:
       | UserMedication
       | GlucoseMeasurement
