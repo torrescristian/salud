@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { UserProfile } from "../../types/health";
-import { Modal } from "../atoms/Modal";
 import { Button } from "../atoms/Button";
 import { FormField } from "../molecules/FormField";
+import { StackPage } from "./StackPage";
 
 export interface ProfileFormProps {
-  isOpen: boolean;
   onSubmit: (profile: UserProfile) => void;
   onCancel: () => void;
   currentProfile?: UserProfile;
 }
 
 export function ProfileForm({
-  isOpen,
   onSubmit,
   onCancel,
   currentProfile,
@@ -60,11 +58,9 @@ export function ProfileForm({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onCancel}
+    <StackPage
       title={currentProfile ? "Editar Perfil" : "Configurar Perfil"}
-      size="md"
+      onBack={onCancel}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField
@@ -162,6 +158,6 @@ export function ProfileForm({
           </Button>
         </div>
       </form>
-    </Modal>
+    </StackPage>
   );
 }

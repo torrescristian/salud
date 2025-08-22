@@ -1,5 +1,18 @@
 import { useState } from "react";
-import { useHealthApp } from "../hooks/health/useHealthApp";
+import {
+  useUserProfile,
+  useUpdateUserProfile,
+  useAddMedication,
+  useUpdateMedication,
+  useMedicationSuggestions,
+  useAddGlucoseMeasurement,
+  useUpdateGlucoseMeasurement,
+  useAddPressureMeasurement,
+  useUpdatePressureMeasurement,
+  useAddInsulinEntry,
+  useUpdateInsulinEntry,
+  useTodayEntries,
+} from "../hooks/useHealthQueries";
 import {
   UserMedication,
   GlucoseMeasurement,
@@ -22,20 +35,18 @@ import { PressureMeasurementForm } from "./PressureMeasurementForm";
 import { InsulinEntryForm } from "./InsulinEntryForm";
 
 export function HealthApp() {
-  const {
-    state,
-    updateUserProfile,
-    takeMedication,
-    getMedicationSuggestions,
-    addGlucoseMeasurement,
-    addPressureMeasurement,
-    addInsulinEntry,
-    editGlucoseMeasurement,
-    editPressureMeasurement,
-    editInsulinEntry,
-    editMedication,
-    getTodayEntries,
-  } = useHealthApp();
+  const { data: userProfile } = useUserProfile();
+  const updateUserProfileMutation = useUpdateUserProfile();
+  const addMedicationMutation = useAddMedication();
+  const updateMedicationMutation = useUpdateMedication();
+  const { data: medicationSuggestions } = useMedicationSuggestions("");
+  const addGlucoseMutation = useAddGlucoseMeasurement();
+  const updateGlucoseMutation = useUpdateGlucoseMeasurement();
+  const addPressureMutation = useAddPressureMeasurement();
+  const updatePressureMutation = useUpdatePressureMeasurement();
+  const addInsulinMutation = useAddInsulinEntry();
+  const updateInsulinMutation = useUpdateInsulinEntry();
+  const { data: todayEntries } = useTodayEntries();
 
   // Stack page states
   const [showMedicationForm, setShowMedicationForm] = useState(false);
@@ -87,30 +98,31 @@ export function HealthApp() {
   };
 
   // Si no hay perfil, mostrar configuración inicial
-  if (!state.userProfile) {
+  if (!userProfile) {
     return (
       <>
         <SetupCard onSetupClick={() => setShowProfileForm(true)} />
-        <ProfileForm
-          isOpen={showProfileForm}
-          onSubmit={(profile) => {
-            updateUserProfile(profile);
-            setShowProfileForm(false);
-          }}
-          onCancel={() => setShowProfileForm(false)}
-        />
+        {showProfileForm && (
+          <ProfileForm
+            onSubmit={(profile) => {
+              updateUserProfileMutation.mutate(profile);
+              setShowProfileForm(false);
+            }}
+            onCancel={() => setShowProfileForm(false)}
+          />
+        )}
       </>
     );
   }
 
-  const todayEntries = getTodayEntries();
+  // No necesitamos esta línea ya que usamos el hook useTodayEntries
 
   return (
     <div className="min-h-screen bg-gray-50">
       <AppHeader
         onProfileClick={() => setShowProfileForm(true)}
-        currentDate={state.currentDate}
-        userProfile={state.userProfile}
+        currentDate={new Date().toISOString().split("T")[0]}
+        userProfile={userProfile}
         onDateChange={(date) => {
           // Aquí podrías implementar la lógica para cambiar la fecha
           // Por ahora solo actualizamos el estado
@@ -125,7 +137,10 @@ export function HealthApp() {
           onPressureClick={() => setShowPressureForm(true)}
           onInsulinClick={() => setShowInsulinForm(true)}
         />
-        <DailySummary entries={todayEntries} onEditEntry={handleEditEntry} />
+        <DailySummary
+          entries={todayEntries || []}
+          onEditEntry={handleEditEntry}
+        />
 
         {/* Stack Pages */}
         {showMedicationForm && (
@@ -147,10 +162,17 @@ export function HealthApp() {
                 customDate?: Date
               ) => {
                 if (editingEntry && editingEntry.type === "medication") {
-                  editMedication(editingEntry.data.id, withFood, customDate);
+                  updateMedicationMutation.mutate({
+                    id: editingEntry.data.id,
+                    updates: { withFood, lastUsed: customDate || new Date() },
+                  });
                   resetEditingState();
                 } else {
-                  takeMedication(medicationName, withFood);
+                  addMedicationMutation.mutate({
+                    name: medicationName,
+                    withFood,
+                    customDate,
+                  });
                 }
                 setShowMedicationForm(false);
               }}
@@ -158,7 +180,7 @@ export function HealthApp() {
                 setShowMedicationForm(false);
                 resetEditingState();
               }}
-              suggestions={getMedicationSuggestions("")}
+              suggestions={medicationSuggestions || []}
               placeholder="Nombre del medicamento..."
               initialMedicationName={
                 editingEntry?.type === "medication"
@@ -195,15 +217,21 @@ export function HealthApp() {
             <GlucoseMeasurementForm
               onSubmit={(value, context, customDate) => {
                 if (editingEntry && editingEntry.type === "glucose") {
-                  editGlucoseMeasurement(
-                    editingEntry.data.id,
-                    value,
-                    context,
-                    customDate
-                  );
+                  updateGlucoseMutation.mutate({
+                    id: editingEntry.data.id,
+                    updates: {
+                      value,
+                      context,
+                      timestamp: customDate || new Date(),
+                    },
+                  });
                   resetEditingState();
                 } else {
-                  addGlucoseMeasurement(value, context, customDate);
+                  addGlucoseMutation.mutate({
+                    value,
+                    context,
+                    customDate,
+                  });
                 }
                 setShowGlucoseForm(false);
               }}
@@ -211,7 +239,9 @@ export function HealthApp() {
                 setShowGlucoseForm(false);
                 resetEditingState();
               }}
-              criticalLimits={state.userProfile.criticalGlucose}
+              criticalLimits={
+                userProfile?.criticalGlucose || { min: 70, max: 180 }
+              }
               initialValue={
                 editingEntry?.type === "glucose"
                   ? (editingEntry.data as GlucoseMeasurement).value
@@ -247,15 +277,21 @@ export function HealthApp() {
             <PressureMeasurementForm
               onSubmit={(systolic, diastolic, customDate) => {
                 if (editingEntry && editingEntry.type === "pressure") {
-                  editPressureMeasurement(
-                    editingEntry.data.id,
-                    systolic,
-                    diastolic,
-                    customDate
-                  );
+                  updatePressureMutation.mutate({
+                    id: editingEntry.data.id,
+                    updates: {
+                      systolic,
+                      diastolic,
+                      timestamp: customDate || new Date(),
+                    },
+                  });
                   resetEditingState();
                 } else {
-                  addPressureMeasurement(systolic, diastolic, customDate);
+                  addPressureMutation.mutate({
+                    systolic,
+                    diastolic,
+                    customDate,
+                  });
                 }
                 setShowPressureForm(false);
               }}
@@ -263,7 +299,12 @@ export function HealthApp() {
                 setShowPressureForm(false);
                 resetEditingState();
               }}
-              criticalLimits={state.userProfile.criticalPressure}
+              criticalLimits={
+                userProfile?.criticalPressure || {
+                  systolic: { min: 90, max: 140 },
+                  diastolic: { min: 60, max: 90 },
+                }
+              }
               initialSystolic={
                 editingEntry?.type === "pressure"
                   ? (editingEntry.data as PressureMeasurement).systolic
@@ -299,17 +340,25 @@ export function HealthApp() {
             <InsulinEntryForm
               onSubmit={(dose, type, context, notes, customDate) => {
                 if (editingEntry && editingEntry.type === "insulin") {
-                  editInsulinEntry(
-                    editingEntry.data.id,
+                  updateInsulinMutation.mutate({
+                    id: editingEntry.data.id,
+                    updates: {
+                      dose,
+                      type,
+                      context,
+                      notes,
+                      timestamp: customDate || new Date(),
+                    },
+                  });
+                  resetEditingState();
+                } else {
+                  addInsulinMutation.mutate({
                     dose,
                     type,
                     context,
                     notes,
-                    customDate
-                  );
-                  resetEditingState();
-                } else {
-                  addInsulinEntry(dose, type, context, notes);
+                    customDate,
+                  });
                 }
                 setShowInsulinForm(false);
               }}
@@ -347,15 +396,16 @@ export function HealthApp() {
           </StackPage>
         )}
 
-        <ProfileForm
-          isOpen={showProfileForm}
-          onSubmit={(profile) => {
-            updateUserProfile(profile);
-            setShowProfileForm(false);
-          }}
-          onCancel={() => setShowProfileForm(false)}
-          currentProfile={state.userProfile}
-        />
+        {showProfileForm && (
+          <ProfileForm
+            onSubmit={(profile) => {
+              updateUserProfileMutation.mutate(profile);
+              setShowProfileForm(false);
+            }}
+            onCancel={() => setShowProfileForm(false)}
+            currentProfile={userProfile}
+          />
+        )}
       </main>
     </div>
   );
