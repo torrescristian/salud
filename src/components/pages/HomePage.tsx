@@ -1,15 +1,17 @@
 import { AllEntriesList } from "../organisms/AllEntriesList";
 
+import { UserMedication, GlucoseMeasurement, PressureMeasurement, InsulinEntry } from "../../types/health";
+
 interface HomePageProps {
   entries: Array<{
     type: "medication" | "glucose" | "pressure" | "insulin";
     time: string;
     date: string;
-    data: any;
+    data: UserMedication | GlucoseMeasurement | PressureMeasurement | InsulinEntry;
   }>;
   onEditEntry: (
     type: "medication" | "glucose" | "pressure" | "insulin",
-    data: any
+    data: UserMedication | GlucoseMeasurement | PressureMeasurement | InsulinEntry
   ) => void;
 }
 
