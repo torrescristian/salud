@@ -4,9 +4,12 @@ import { CompactFilters } from "../../components/molecules/CompactFilters";
 
 describe("CompactFilters", () => {
   const mockOnPeriodChange = vi.fn();
+  const mockDate = new Date("2025-08-22T10:47:00.000Z");
+  const expectedDate = "2025-08-22";
 
   const defaultProps = {
     onPeriodChange: mockOnPeriodChange,
+    currentDate: mockDate,
   };
 
   beforeEach(() => {
@@ -28,7 +31,7 @@ describe("CompactFilters", () => {
     fireEvent.click(dayButton);
 
     // After clicking day, should show date input
-    const dateInput = screen.getByDisplayValue("2025-08-22");
+    const dateInput = screen.getByDisplayValue(expectedDate);
     expect(dateInput).toBeInTheDocument();
   });
 
@@ -59,7 +62,7 @@ describe("CompactFilters", () => {
     expect(mockOnPeriodChange).toHaveBeenCalledWith(
       "day",
       expect.any(Date),
-      expect.any(Date)
+      expect.any(Date),
     );
   });
 
@@ -72,7 +75,7 @@ describe("CompactFilters", () => {
     expect(mockOnPeriodChange).toHaveBeenCalledWith(
       "week",
       expect.any(Date),
-      expect.any(Date)
+      expect.any(Date),
     );
   });
 
@@ -85,7 +88,7 @@ describe("CompactFilters", () => {
     expect(mockOnPeriodChange).toHaveBeenCalledWith(
       "month",
       expect.any(Date),
-      expect.any(Date)
+      expect.any(Date),
     );
   });
 
@@ -141,7 +144,7 @@ describe("CompactFilters", () => {
     const dayButton = screen.getByText("Día");
     fireEvent.click(dayButton);
 
-    const dateInput = screen.getByDisplayValue("2025-08-22");
+    const dateInput = screen.getByDisplayValue(expectedDate);
     const testDate = "2024-01-15";
     fireEvent.change(dateInput, { target: { value: testDate } });
 
@@ -161,7 +164,7 @@ describe("CompactFilters", () => {
     expect(mockOnPeriodChange).toHaveBeenCalledWith(
       "week",
       expect.any(Date),
-      expect.any(Date)
+      expect.any(Date),
     );
   });
 
@@ -178,7 +181,7 @@ describe("CompactFilters", () => {
     expect(mockOnPeriodChange).toHaveBeenCalledWith(
       "month",
       expect.any(Date),
-      expect.any(Date)
+      expect.any(Date),
     );
   });
 });

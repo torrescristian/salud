@@ -22,18 +22,23 @@ export interface CompactFiltersProps {
   onPeriodChange: (
     period: FilterPeriod,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
   ) => void;
+  currentDate?: Date;
   className?: string;
 }
 
 export const CompactFilters = ({
   onPeriodChange,
+  currentDate,
   className = "",
 }: CompactFiltersProps) => {
+  const today = currentDate
+    ? createLocalDate(currentDate)
+    : getCurrentDateLocal();
   const [selectedPeriod, setSelectedPeriod] = useState<FilterPeriod>("week");
   const [selectedDate, setSelectedDate] = useState(
-    createLocalDate().toISOString().split("T")[0]
+    today.toISOString().split("T")[0],
   );
   const [selectedWeek, setSelectedWeek] = useState<string>("");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
@@ -41,10 +46,10 @@ export const CompactFilters = ({
   // Generar opciones de semanas (últimas 8 semanas para ser más compacto)
   const weekOptions = eachWeekOfInterval(
     {
-      start: subWeeks(createLocalDate(), 8),
-      end: createLocalDate(),
+      start: subWeeks(today, 8),
+      end: today,
     },
-    { weekStartsOn: 1 }
+    { weekStartsOn: 1 },
   ).map((weekStart) => {
     const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
     const value = weekStart.toISOString().split("T")[0];
@@ -56,8 +61,8 @@ export const CompactFilters = ({
 
   // Generar opciones de meses (últimos 6 meses para ser más compacto)
   const monthOptions = eachMonthOfInterval({
-    start: subMonths(createLocalDate(), 6),
-    end: createLocalDate(),
+    start: subMonths(today, 6),
+    end: today,
   }).map((monthStart) => {
     const value = monthStart.toISOString().split("T")[0];
     const label = format(monthStart, "MMM yyyy", { locale: es });
@@ -77,12 +82,12 @@ export const CompactFilters = ({
             startDate = dateObj;
             endDate = dateObj;
           } else {
-            startDate = getCurrentDateLocal();
-            endDate = getCurrentDateLocal();
+            startDate = today;
+            endDate = today;
           }
         } else {
-          startDate = getCurrentDateLocal();
-          endDate = getCurrentDateLocal();
+          startDate = today;
+          endDate = today;
         }
         break;
       case "week":
@@ -92,12 +97,12 @@ export const CompactFilters = ({
             startDate = startOfWeek(weekDateObj, { weekStartsOn: 1 });
             endDate = endOfWeek(weekDateObj, { weekStartsOn: 1 });
           } else {
-            startDate = startOfWeek(getCurrentDateLocal(), { weekStartsOn: 1 });
-            endDate = endOfWeek(getCurrentDateLocal(), { weekStartsOn: 1 });
+            startDate = startOfWeek(today, { weekStartsOn: 1 });
+            endDate = endOfWeek(today, { weekStartsOn: 1 });
           }
         } else {
-          startDate = startOfWeek(getCurrentDateLocal(), { weekStartsOn: 1 });
-          endDate = endOfWeek(getCurrentDateLocal(), { weekStartsOn: 1 });
+          startDate = startOfWeek(today, { weekStartsOn: 1 });
+          endDate = endOfWeek(today, { weekStartsOn: 1 });
         }
         break;
       case "month":
@@ -107,12 +112,12 @@ export const CompactFilters = ({
             startDate = startOfMonth(monthDateObj);
             endDate = endOfMonth(monthDateObj);
           } else {
-            startDate = startOfMonth(getCurrentDateLocal());
-            endDate = endOfMonth(getCurrentDateLocal());
+            startDate = startOfMonth(today);
+            endDate = endOfMonth(today);
           }
         } else {
-          startDate = startOfMonth(getCurrentDateLocal());
-          endDate = endOfMonth(getCurrentDateLocal());
+          startDate = startOfMonth(today);
+          endDate = endOfMonth(today);
         }
         break;
     }
@@ -130,7 +135,7 @@ export const CompactFilters = ({
     setSelectedPeriod(period);
     if (period === "day") {
       if (!selectedDate) {
-        setSelectedDate(createLocalDate().toISOString().split("T")[0]);
+        setSelectedDate(today.toISOString().split("T")[0]);
       }
       setSelectedWeek("");
       setSelectedMonth("");
