@@ -9,6 +9,8 @@ import {
   Tooltip,
   Legend,
   Filler,
+  type ChartOptions,
+  type TooltipItem,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { format, parseISO } from "date-fns";
@@ -24,7 +26,7 @@ ChartJS.register(
   Tooltip,
   Legend,
   Filler,
-  ChartDataLabels
+  ChartDataLabels,
 );
 
 interface MeasurementPoint {
@@ -57,10 +59,10 @@ export const HealthChart = ({
 }: HealthChartProps) => {
   // Ordenar todos los datasets por timestamp
   const allTimestamps = datasets.flatMap((dataset) =>
-    dataset.data.map((point) => point.timestamp)
+    dataset.data.map((point) => point.timestamp),
   );
   const uniqueTimestamps = [...new Set(allTimestamps)].sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
   );
 
   const chartData = {
@@ -71,7 +73,7 @@ export const HealthChart = ({
     datasets: datasets.map((dataset) => {
       const sortedData = [...dataset.data].sort(
         (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       );
 
       return {
@@ -93,7 +95,7 @@ export const HealthChart = ({
     }),
   };
 
-  const options = {
+  const options: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -115,15 +117,12 @@ export const HealthChart = ({
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: (context: {
-            dataset: { label?: string };
-            parsed: { y: number };
-          }) => {
+          label: (context: TooltipItem<"line">) => {
             return `${context.dataset.label || "Valor"}: ${
               context.parsed.y
             } ${unit}`;
           },
-          title: (tooltipItems: { dataIndex: number }[]) => {
+          title: (tooltipItems: TooltipItem<"line">[]) => {
             const index = tooltipItems[0].dataIndex;
             const timestamp = uniqueTimestamps[index];
             const date = parseISO(timestamp);
@@ -236,8 +235,8 @@ export const HealthChart = ({
               ? Math.round(
                   datasets[0].data.reduce(
                     (sum: number, point: MeasurementPoint) => sum + point.value,
-                    0
-                  ) / datasets[0].data.length
+                    0,
+                  ) / datasets[0].data.length,
                 )
               : 0}{" "}
             {unit}
